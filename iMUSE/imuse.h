@@ -24,7 +24,7 @@ typedef struct
 	int field_48;
 	int (*seekFunc)();
 	int (*readFunc)();
-	int field_54;
+	int (*bufInfoFunc)();
 	int field_58;
 	int field_5C;
 	int field_60;
