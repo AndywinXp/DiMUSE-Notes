@@ -122,7 +122,7 @@
     <ClCompile Include="groups.c" />
     <ClCompile Include="timer.c" />
     <ClCompile Include="triggers.c" />
-    <ClCompile Include="wavedrv.c" />
+    <ClCompile Include="wave.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands.h" />
@@ -132,7 +132,7 @@
     <ClInclude Include="imuse.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="triggers.h" />
-    <ClInclude Include="wavedrv.h" />
+    <ClInclude Include="wave.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

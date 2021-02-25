@@ -36,7 +36,7 @@
     <ClCompile Include="files.c">
       <Filter>File di origine</Filter>
     </ClCompile>
-    <ClCompile Include="wavedrv.c">
+    <ClCompile Include="wave.c">
       <Filter>File di origine</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,7 +62,7 @@
     <ClInclude Include="files.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
-    <ClInclude Include="wavedrv.h">
+    <ClInclude Include="wave.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

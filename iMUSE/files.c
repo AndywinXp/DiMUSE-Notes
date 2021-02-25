@@ -36,7 +36,7 @@ int files_some1(soundId) {
 int files_getNextSound(int soundId) {
 	int foundSoundId = 0;
 	do {
-		foundSoundId = wavedrv_getNextSound(foundSoundId);
+		foundSoundId = wave_getNextSound(foundSoundId);
 		if (!foundSoundId)
 			return -1;
 		if (foundSoundId == soundId)

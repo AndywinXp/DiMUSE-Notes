@@ -1,17 +1,17 @@
-#include "wavedrv.h"
+#include "wave.h"
 
-int wavedrv_init(iMUSEInitData *initDataPtr) {
+int wave_init(iMUSEInitData *initDataPtr) {
 	if (tracks_init(initDataPtr))
 		return -1;
 	wvSlicingHalted = 0;
 	return 0;
 }
 
-int wavedrv_terminate() {
+int wave_terminate() {
 	return 0;
 }
 
-int wavedrv_pause() {
+int wave_pause() {
 	wvSlicingHalted++;
 	tracks_pause();
 	if (wvSlicingHalted) {
@@ -20,7 +20,7 @@ int wavedrv_pause() {
 	return 0;
 }
 
-int wavedrv_resume() {
+int wave_resume() {
 	wvSlicingHalted++;
 	tracks_resume();
 	if (wvSlicingHalted) {
@@ -29,7 +29,7 @@ int wavedrv_resume() {
 	return 0;
 }
 
-int wavedrv_save(unsigned char *buffer, int sizeLeft) {
+int wave_save(unsigned char *buffer, int sizeLeft) {
 	wvSlicingHalted++;
 	int result = tracks_save(buffer, sizeLeft);
 	if (wvSlicingHalted) {
@@ -39,7 +39,7 @@ int wavedrv_save(unsigned char *buffer, int sizeLeft) {
 	return result;
 }
 
-int wavedrv_restore(unsigned char *buffer) {
+int wave_restore(unsigned char *buffer) {
 	wvSlicingHalted++;
 	int result = tracks_restore(buffer);
 	if (wvSlicingHalted) {
@@ -48,7 +48,7 @@ int wavedrv_restore(unsigned char *buffer) {
 	return result;
 }
 
-int wavedrv_setGroupVol() {
+int wave_setGroupVol() {
 	wvSlicingHalted++;
 	int result = tracks_setGroupVol();
 	if (wvSlicingHalted) {
@@ -57,7 +57,7 @@ int wavedrv_setGroupVol() {
 	return result;
 }
 
-int wavedrv_startSound(int soundId, int priority) {
+int wave_startSound(int soundId, int priority) {
 	wvSlicingHalted++;
 	int result = tracks_startSound(soundId, priority, 0);
 	if (wvSlicingHalted) {
@@ -66,7 +66,7 @@ int wavedrv_startSound(int soundId, int priority) {
 	return result;
 }
 
-int wavedrv_stopSound(int soundId) {
+int wave_stopSound(int soundId) {
 	wvSlicingHalted++;
 	int result = tracks_stopSound(soundId);
 	if (wvSlicingHalted) {
@@ -75,7 +75,7 @@ int wavedrv_stopSound(int soundId) {
 	return result;
 }
 
-int wavedrv_stopAllSounds() {
+int wave_stopAllSounds() {
 	wvSlicingHalted++;
 	int result = tracks_stopAllSounds();
 	if (wvSlicingHalted != 0) {
@@ -84,7 +84,7 @@ int wavedrv_stopAllSounds() {
 	return result;
 }
 
-int wavedrv_getNextSound(int soundId) {
+int wave_getNextSound(int soundId) {
 	wvSlicingHalted++;
 	int result = tracks_getNextSound(soundId);
 	if (wvSlicingHalted) {
@@ -93,7 +93,7 @@ int wavedrv_getNextSound(int soundId) {
 	return result;
 }
 
-int wavedrv_setParam(int soundId, int opcode, int value) {
+int wave_setParam(int soundId, int opcode, int value) {
 	wvSlicingHalted++;
 	int result = tracks_setParam(soundId, opcode, value);
 	if (wvSlicingHalted) {
@@ -102,7 +102,7 @@ int wavedrv_setParam(int soundId, int opcode, int value) {
 	return result;
 }
 
-int wavedrv_getParam(int soundId, int opcode) {
+int wave_getParam(int soundId, int opcode) {
 	wvSlicingHalted++;
 	int result = tracks_getParam(soundId, opcode);
 	if (wvSlicingHalted) {
@@ -111,15 +111,15 @@ int wavedrv_getParam(int soundId, int opcode) {
 	return result;
 }
 
-int wavedrv_setHook(int soundId, int hookId) {
+int wave_setHook(int soundId, int hookId) {
 	return tracks_setHook(soundId, hookId);
 }
 
-int wavedrv_getHook(int soundId) {
+int wave_getHook(int soundId) {
 	return tracks_getHook(soundId);
 }
 
-int wavedrv_startStream(int oldSoundId, int newSoundId, int param) {
+int wave_startStream(int oldSoundId, int newSoundId, int param) {
 	if (!files_checkRange(oldSoundId))
 		return -1;
 	wvSlicingHalted++;
@@ -130,7 +130,7 @@ int wavedrv_startStream(int oldSoundId, int newSoundId, int param) {
 	return result;
 }
 
-int wavedrv_switchStream(int oldSoundId, int soundId, int param3, int fadeSyncFlag2, int fadeSyncFlag1) {
+int wave_switchStream(int oldSoundId, int soundId, int param3, int fadeSyncFlag2, int fadeSyncFlag1) {
 	wvSlicingHalted++;
 	int result = dispatch_switchStream(oldSoundId, soundId, param3, fadeSyncFlag2, fadeSyncFlag1);
 	if (wvSlicingHalted) {
@@ -139,7 +139,7 @@ int wavedrv_switchStream(int oldSoundId, int soundId, int param3, int fadeSyncFl
 	return result;
 }
 
-int wavedrv_processStreams() {
+int wave_processStreams() {
 	wvSlicingHalted++;
 	int result = streamer_processStreams();
 	if (wvSlicingHalted) {
@@ -148,7 +148,7 @@ int wavedrv_processStreams() {
 	return result;
 }
 
-int wavedrv_queryStream(int soundId, int sampleRate, int param3, int param4, int param5) {
+int wave_queryStream(int soundId, int sampleRate, int param3, int param4, int param5) {
 	wvSlicingHalted++;
 	int result = tracks_queryStream(soundId, sampleRate, param3, param4, param5);
 	if (wvSlicingHalted) {
@@ -157,7 +157,7 @@ int wavedrv_queryStream(int soundId, int sampleRate, int param3, int param4, int
 	return result;
 }
 
-int wavedrv_feedStream(int soundId, int param2, int param3, int param4) {
+int wave_feedStream(int soundId, int param2, int param3, int param4) {
 	wvSlicingHalted++;
 	int result = tracks_feedStream(soundId, param2, param3, param4);
 	if (wvSlicingHalted) {
@@ -166,6 +166,6 @@ int wavedrv_feedStream(int soundId, int param2, int param3, int param4) {
 	return result;
 }
 
-int wavedrv_lipSync(int soundId, int syncId, int msPos, int width, char height) {
+int wave_lipSync(int soundId, int syncId, int msPos, int width, char height) {
 	return tracks_lipSync(soundId, syncId, msPos, width, height);
 }

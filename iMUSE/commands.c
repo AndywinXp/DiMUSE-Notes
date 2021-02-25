@@ -59,13 +59,13 @@ void iMUSEHeartbeat()
 		soundId = 0;
 		musicTargetVolume = groups_setGroupVol(IMUSE_GROUP_MUSIC, -1);
 		while (1) { // Check all tracks to see if there's a speech file playing
-			soundId = wavedrv_getNextSound(soundId); 
+			soundId = wave_getNextSound(soundId); 
 			if (!soundId)
 				break;
 
 			foundGroupId = -1;
 			if (files_getNextSound(soundId) == 2) {
-				foundGroupId = wavedrv_getParam(soundId, 0x400); // Check the groupId of this sound
+				foundGroupId = wave_getParam(soundId, 0x400); // Check the groupId of this sound
 			}
 
 			if (foundGroupId == IMUSE_GROUP_SPEECH) {
@@ -150,7 +150,7 @@ int cmds_init(iMUSEInitData * initDataPtr)
 	cmd_running10HzCount = 0;
 	initDataPtr->num60hzIterations = 0;
 	if (files_moduleInit(initDataPtr) || groups_moduleInit() || fades_moduleInit() ||
-		triggers_moduleInit(initDataPtr) || wavedrv_init(initDataPtr) || timer_moduleInit(initDataPtr)) {
+		triggers_moduleInit(initDataPtr) || wave_init(initDataPtr) || timer_moduleInit(initDataPtr)) {
 		return -1;
 	}
 	cmd_initDataPtr = initDataPtr;
@@ -163,7 +163,7 @@ int cmds_deinit()
 {
 	cmd_initDataPtr = NULL;
 	timer_moduleDeinit();
-	wavedrv_terminate();
+	wave_terminate();
 	waveout_free();
 	triggers_clear();
 	fades_moduleDeinit();
@@ -198,7 +198,7 @@ int cmds_pause()
 	int result = 0;
 
 	if (!cmd_pauseCount) {
-		result = wavedrv_pause();
+		result = wave_pause();
 	}
 	cmd_pauseCount++;
 	if (!result) {
@@ -214,7 +214,7 @@ int cmds_resume()
 	int result = 0;
 
 	if (cmd_pauseCount == 1) {
-		result = wavedrv_resume();
+		result = wave_resume();
 	}
 	cmd_pauseCount--;
 	if (!result) {
@@ -242,17 +242,17 @@ int cmds_save(unsigned char * buffer, int sizeLeft)
 	if (size_triggers < 0)
 		return size_triggers;
 	total_size += size_triggers;
-	int size_wavedrv = wavedrv_save(buffer + total_size, sizeLeft - total_size);
-	if (size_wavedrv < 0)
-		return size_wavedrv;
-	return size_wavedrv + total_size;
+	int size_wave = wave_save(buffer + total_size, sizeLeft - total_size);
+	if (size_wave < 0)
+		return size_wave;
+	return size_wave + total_size;
 }
 
 int cmds_restore(unsigned char * buffer)
 {
 	fades_moduleDeinit();
 	triggers_clear();
-	wavedrv_stopAllSounds();
+	wave_stopAllSounds();
 	if (*(__int32 *)(buffer + 0) != 48) {
 		printf("restore buffer contains bad data..");
 		return -1;
@@ -263,8 +263,8 @@ int cmds_restore(unsigned char * buffer)
 	}
 	int size_fades = fades_restore(buffer + 8);
 	int size_triggers = triggers_restore(size_fades + 8 + buffer);
-	int size_wavedrv = wavedrv_restore(size_fades + 8 + size_triggers + buffer);
-	return size_fades + 8 + size_triggers + size_wavedrv;
+	int size_wave = wave_restore(size_fades + 8 + size_triggers + buffer);
+	return size_fades + 8 + size_triggers + size_wave;
 }
 
 int cmds_startSound(int soundId, int priority)
@@ -278,7 +278,7 @@ int cmds_startSound(int soundId, int priority)
 	if (*(uint32_t *)src != TO_LE32('iMUS'))
 		return -1;
 
-	return wavedrv_startSound(priority, soundId);
+	return wave_startSound(priority, soundId);
 }
 
 int cmds_stopSound(int soundId)
@@ -286,20 +286,20 @@ int cmds_stopSound(int soundId)
 	int result = files_getNextSound(soundId);
 	if (result != 2)
 		return -1;
-	return wavedrv_stopSound(soundId);
+	return wave_stopSound(soundId);
 }
 
 int cmds_stopAllSounds()
 {
 	int result = fades_moduleDeinit();
 	result |= triggers_clear();
-	result |= wavedrv_stopAllSounds();
+	result |= wave_stopAllSounds();
 	return result;
 }
 
 int cmds_getNextSound(int soundId)
 {
-	return wavedrv_getNextSound(soundId);
+	return wave_getNextSound(soundId);
 }
 
 int cmds_setParam(int soundId, int subCmd, int value)
@@ -307,7 +307,7 @@ int cmds_setParam(int soundId, int subCmd, int value)
 	int result = files_getNextSound(soundId);
 	if (result != 2)
 		return -1;
-	return wavedrv_setParam(soundId, subCmd, value);
+	return wave_setParam(soundId, subCmd, value);
 }
 
 int cmds_getParam(int soundId, int subCmd)
@@ -319,7 +319,7 @@ int cmds_getParam(int soundId, int subCmd)
 		return triggers_countPendingSounds(soundId);
 	}
 	if (result == 2) {
-		return wavedrv_getParam(soundId, subCmd);
+		return wave_getParam(soundId, subCmd);
 	}
 	else {
 		return ((subCmd - 0x100) < 1) - 1;
@@ -333,7 +333,7 @@ int cmds_setHook(int soundId, int hookId)
 	int result = files_getNextSound(soundId);
 	if (result != 2)
 		return -1;
-	return wavedrv_setHook(soundId, hookId);
+	return wave_setHook(soundId, hookId);
 }
 
 int cmds_getHook(int soundId)
@@ -341,7 +341,7 @@ int cmds_getHook(int soundId)
 	int result = files_getNextSound(soundId);
 	if (result != 2)
 		return -1;
-	return wavedrv_getHook(soundId);
+	return wave_getHook(soundId);
 }
 
 int cmds_debug()

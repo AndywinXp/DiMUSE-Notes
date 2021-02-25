@@ -36,7 +36,7 @@ int groups_setGroupVol(int id, int volume) {
 		groupEffVols[id] = (volume * (value + 1)) / 128;
 	}
 
-	wavedrv_setGroupVol();
+	wave_setGroupVol();
 	return value;
 }
 

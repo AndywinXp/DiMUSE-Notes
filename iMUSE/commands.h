@@ -2,6 +2,8 @@
 #define DIGITAL_IMUSE_CMDS
 
 #include "imuse.h"
+#include "triggers.h"
+#include "wave.h"
 
 void iMUSEHeartbeat();
 
@@ -39,6 +41,6 @@ int (*iMUSE_FuncList[31])() = { cmds_init,             cmds_terminate,         c
 	 						    cmds_stopAllSounds,    cmds_getNextSound,      cmds_setParam,          cmds_getParam,         fades_fadeParam,
 								cmds_setHook,          cmds_getHook,           triggers_setTrigger,    triggers_checkTrigger, triggers_clearTrigger,
 							    triggers_deferCommand, 0,                      0,                      0,                     0,
-							    wavedrv_startStream,   wavedrv_switchStream,   wavedrv_processStreams, wavedrv_queryStream,   wavedrv_feedStream,
-								wavedrv_lipSync };
+							    wave_startStream,      wave_switchStream,      wave_processStreams,    wave_queryStream,      wave_feedStream,
+								wave_lipSync };
 #endif
