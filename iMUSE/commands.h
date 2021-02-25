@@ -4,6 +4,7 @@
 #include "imuse.h"
 #include "triggers.h"
 #include "wave.h"
+#include "groups.h"
 
 void iMUSEHeartbeat();
 

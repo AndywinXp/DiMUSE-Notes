@@ -3,8 +3,8 @@
 
 typedef struct 
 {
-	int getSoundDataAddr;
-	int func_some1;
+	int (*getSoundDataAddr)();
+	int(*func_some1)();
 	int (*scriptCallback)();
 	int field_C;
 	int hostIntHandler;
@@ -23,7 +23,7 @@ typedef struct
 	int waveMixCount;
 	int field_48;
 	int (*seekFunc)();
-	int(*readFunc)();
+	int (*readFunc)();
 	int field_54;
 	int field_58;
 	int field_5C;
