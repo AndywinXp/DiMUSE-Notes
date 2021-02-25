@@ -15,12 +15,12 @@
 #define TO_LE16(x)	bswap_16(x)
 #endif
 
-
+// Validated
 void iMUSEHeartbeat()
 {
 	// This is what appears to happen:
 	// - Usual audio stuff like fetching and playing sound (and everything 
-	//   within waveout_callback()) happens at a base 50Hz rate;
+	//   within waveapi_callback()) happens at a base 50Hz rate;
 	// - Triggers and fades handling happens at a (somewhat hacky) 60Hz rate;
 	// - Music gain reduction happens at a 10Hz rate.
 
@@ -29,7 +29,7 @@ void iMUSEHeartbeat()
 		return;
 
 	int usecPerInt = timer_getUsecPerInt(); // this seems always seems to be 20000 (50 Hz)
-	waveout_callback();
+	waveapi_callback();
 	if (cmd_hostIntHandler) {
 		cmd_hostIntUsecCount += usecPerInt;
 		while (cmd_runningHostCount >= cmd_hostIntUsecCount) {
@@ -44,7 +44,7 @@ void iMUSEHeartbeat()
 	cmd_running60HzCount += usecPerInt;
 	while (cmd_running60HzCount >= 16667) {
 		cmd_running60HzCount -= 16667;
-		cmd_initDataPtr->num60hzIterations++; // Number of 60hz iterations?
+		cmd_initDataPtr->num60hzIterations++;
 		fades_loop();
 		triggers_loop();
 	}
@@ -79,7 +79,7 @@ void iMUSEHeartbeat()
 		musicEffVol = groups_setGroupVol(IMUSE_GROUP_MUSICEFF, -1); // MUSIC EFFECTIVE VOLUME GROUP (used for gain reduction)
 		musicVol = groups_setGroupVol(IMUSE_GROUP_MUSIC, -1); // MUSIC VOLUME SUBGROUP (keeps track of original music volume)
 
-		if (musicEffVol < musicVol) { // If there is gain reduction going on...
+		if (musicEffVol < musicVol) { // If there is gain reduction already going on...
 			musicEffVol += 3;
 			if (musicEffVol >= musicTargetVolume) {
 				if (musicVol <= musicTargetVolume) {
@@ -97,8 +97,7 @@ void iMUSEHeartbeat()
 				if (musicVol >= musicEffVol) {
 					musicVol = musicEffVol;
 				}
-			}
-			else {                                
+			} else {                                
 				if (musicVol >= musicTargetVolume) {
 					musicVol = musicTargetVolume;
 				}
@@ -177,17 +176,20 @@ int cmds_deinit()
 	cmd_running10HzCount = 0;
 }
 
+// Validated
 int cmds_terminate()
 {
 	//vh_ReleaseModule("iMUSE");
 	return 0;
 }
 
+// Duplicate save/load stuff, I don't think we need it for the time being
 int cmds_persistence(int cmd, void * funcCall)
 {
 	return 0;
 }
 
+// Validated (or at least good enough)
 int cmds_print(int param1, int param2, int param3, int param4, int param5, int param6, int param7)
 {
 	return printf("%d %d %d %d %d %d %d", param1, param2, param3, param4, param5, param6, param7);
