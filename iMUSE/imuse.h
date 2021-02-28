@@ -4,7 +4,7 @@
 typedef struct 
 {
 	int (*getSoundDataAddr)();
-	int(*func_some1)();
+	int (*func_some1)();
 	int (*scriptCallback)();
 	int field_C;
 	int hostIntHandler;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
+// Validated
 int fades_moduleInit()
 {
 	for (int l = 0; l < MAX_FADES; l++) {
@@ -12,11 +13,13 @@ int fades_moduleInit()
 	return 0;
 }
 
+// Validated
 int fades_moduleDeinit()
 {
 	return 0;
 }
 
+// Validated
 int fades_save(unsigned char *buffer, int sizeLeft)
 {
 	// We're saving 640 bytes:
@@ -27,80 +30,80 @@ int fades_save(unsigned char *buffer, int sizeLeft)
 	return 640;
 }
 
+// Validated
 int fades_restore(unsigned char *buffer)
 {
 	memcpy(fades, buffer, 640);
+	fadesOn = 1;
 	return 640;
 }
 
+// Validated
 int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLength)
 {
 	if (!soundId || fadeLength < 0)
 		return -5;
-	if (opcode != 0x500 && opcode != 0x600 && opcode != 0x700 && opcode != 0x800 && opcode != 0xf00 && opcode != 17)
+	if (opcode != 0x500 && opcode != 0x600 && opcode != 0x700 && opcode != 0x800 && opcode != 0xF00 && opcode != 17)
 		return -5;
 	for (int l = 0; l < MAX_FADES; l++) {
-		if (!fades[l].status || fades[l].sound != soundId)
-			continue;
-		if (fades[l].param == opcode || opcode == -1) {
+		if (fades[l].status && fades[l].sound == soundId && (fades[l].param == opcode || opcode == -1)) {
 			fades[l].status = 0;
 		}
 	}
-	if (fadeLength == 0) {
+	if (!fadeLength) {
 		if (opcode != 0x600 || destinationValue) {
 			// IMUSE_CMDS_SetParam
 			handleCmds(12, soundId, opcode, destinationValue);
 			return 0;
-		}
-		else {
+		} else {
 			// IMUSE_CMDS_StopSound
 			handleCmds(9, soundId);
 			return 0;
 		}
 	}
+
 	for (int l = 0; l < MAX_FADES; l++) {
-		if (fades[l].status == 0)
+		if (!fades[l].status) {
 			fades[l].sound = soundId;
-		fades[l].param = opcode;
-		// IMUSE_CMDS_GetParam
-		fades[l].currentVal = handleCmds(13, soundId, opcode);
-		fades[l].length = fadeLength;
-		fades[l].counter = fadeLength;
-		fades[l].slope = (destinationValue - fades[l].currentVal) / fadeLength;
-			
-		if ((destinationValue - fades[l].currentVal) < 0) {
-			fades[l].nudge = -1;
-		} else {
-			fades[l].nudge = 1;
-		}
+			fades[l].param = opcode;
+			// IMUSE_CMDS_GetParam (probably fetches current volume, with opcode 0x600)
+			fades[l].currentVal = handleCmds(13, soundId, opcode);
+			fades[l].length = fadeLength;
+			fades[l].counter = fadeLength;
+			fades[l].slope = (destinationValue - fades[l].currentVal) / fadeLength;
 
-		if ((destinationValue - fades[l].currentVal) < 0) {
-			fades[l].slopeMod = -(fades[l].slope % fadeLength);
-		} else {
-			fades[l].slopeMod = fades[l].slope % fadeLength;
-		}
+			if ((destinationValue - fades[l].currentVal) < 0) {
+				fades[l].nudge = -1;
+				fades[l].slopeMod = (-fades[l].slope % fadeLength);
+			} else {
+				fades[l].nudge = 1;
+				fades[l].slopeMod = fades[l].slope % fadeLength;
+			}
 
-		fades[l].modOvfloCounter = 0;
-		fades[l].status = 1;
-		fadesOn = 1;
+			fades[l].modOvfloCounter = 0;
+			fades[l].status = 1;
+			fadesOn = 1;
+		}	
 	}
-	printf("DigitalIMUSEFades: ERROR: fd unable to alloc fade...\n");
+
+	printf("ERROR: fd unable to alloc fade...\n");
 	return -6;
 }
 
-void fades_clearFadeStatus(int soundId, int param)
+void fades_clearFadeStatus(int soundId, int opcode)
 {
 	for (int l = 0; l < MAX_FADES; l++) {
 		if (fades[l].status == 0)
 			continue;
 		if (fades[l].sound != soundId)
 			continue;
-		if (fades[l].param == param || param == -1) {
+		if (fades[l].param == opcode || opcode == -1) {
 			fades[l].status = 0;
 		}
 	}
 }
 
+// Validated
 void fades_loop()
 {
 	if (!fadesOn)
@@ -108,42 +111,40 @@ void fades_loop()
 	fadesOn = 0;
 
 	for (int l = 0; l < MAX_FADES; l++) {
-		if (!fades[l].status)
-			continue;
+		if (fades[l].status) {
+			fadesOn = 1;
+			if (--fades[l].counter == 0) {
+				fades[l].status = 0;
+			}
 
-		fadesOn = 1;
-		if (--fades[l].counter == 0) {
-			fades[l].status = 0;
-		}
+			int currentVolume = fades[l].currentVal + fades[l].slope;
+			int currentSlopeMod = fades[l].modOvfloCounter + fades[l].slopeMod;
+			fades[l].modOvfloCounter += fades[l].slopeMod;
 
-		int currentVolume = fades[l].currentVal + fades[l].slope;
-		int currentSlopeMod = fades[l].modOvfloCounter + fades[l].slopeMod;
-		fades[l].modOvfloCounter += fades[l].slopeMod;
+			if (fades[l].length <= currentSlopeMod) {
+				fades[l].modOvfloCounter = currentSlopeMod - fades[l].length;
+				currentVolume += fades[l].nudge;
+			}
 
-		if (fades[l].length <= currentSlopeMod) {
-			fades[l].modOvfloCounter = currentSlopeMod - fades[l].length;
-			currentVolume += fades[l].nudge;
-		}
+			if (fades[l].currentVal != currentVolume) {
+				fades[l].currentVal = currentVolume;
 
-		if (fades[l].currentVal == currentVolume)
-			continue;
-
-		fades[l].currentVal = currentVolume;
-
-		if (!(fades[l].counter % 6))
-			continue;
-
-		if ((fades[l].param != 0x600) || currentVolume) {
-			// IMUSE_CMDS_SetParam
-			handleCmds(12, fades[l].sound, fades[l].param, currentVolume);
-			continue;
-		} else {
-			// IMUSE_CMDS_StopSound
-			handleCmds(9, fades[l].sound);
+				if ((fades[l].counter % 6) == 0) {
+					if ((fades[l].param != 0x600) || currentVolume != 0) {
+						// IMUSE_CMDS_SetParam
+						handleCmds(12, fades[l].sound, fades[l].param, currentVolume);
+						continue;
+					} else {
+						// IMUSE_CMDS_StopSound
+						handleCmds(9, fades[l].sound);
+					}
+				}
+			}
 		}
 	}
 }
 
+// Validated
 void fades_moduleFree()
 {
 	for (int l = 0; l < MAX_FADES; l++) {
@@ -152,6 +153,8 @@ void fades_moduleFree()
 	fadesOn = 0;
 }
 
+// Validated
+// Not 1:1 but good enough for our purpose
 int fades_moduleDebug()
 {
 	printf("fadesOn: %d", fadesOn);
