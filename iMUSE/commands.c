@@ -18,7 +18,7 @@
 // Validated
 void iMUSEHeartbeat()
 {
-	// This is what appears to happen:
+	// This is what happens:
 	// - Usual audio stuff like fetching and playing sound (and everything 
 	//   within waveapi_callback()) happens at a base 50Hz rate;
 	// - Triggers and fades handling happens at a (somewhat hacky) 60Hz rate;
@@ -107,38 +107,43 @@ void iMUSEHeartbeat()
 	} while (cmd_running10HzCount >= 100000);
 }
 
-int handleCmds(int cmd, int dataStartPtr)
+// Validated
+int handleCmds(int cmd, int arg_0,  int arg_1,  int arg_2,  int arg_3,  int arg_4,
+						int arg_5,  int arg_6,  int arg_7,  int arg_8,  int arg_9,
+						int arg_10, int arg_11, int arg_12, int arg_13)
 {
-	if (!cmd_initDataPtr || !cmd)
-	{
-		int(*func)() = iMUSE_FuncList[cmd];
-		if (cmd < 30)
-		{
-			if (cmd == 17 || cmd == 20)
-				func(dataStartPtr);
-			else
-				func(dataStartPtr);
-		}
-		else
-		{
-			printf("ERROR:bogus opcode...");
-			return -1;
-		}
-	}
-	else
+
+	if (cmd_initDataPtr == NULL && cmd != 0)
 	{
 		printf("ERROR:system not initialized...");
 		return -1;
 	}
+
+	int(*func)() = iMUSE_FuncList[cmd];
+	if (func != NULL && cmd < 30)
+	{
+		if (cmd != 17 && cmd != 20)
+			func(arg_0,  arg_1,  arg_2,  arg_3,  arg_4,
+				 arg_5,  arg_6,  arg_7,  arg_8,  arg_9);
+		else
+			func(arg_0,  arg_1,  arg_2,  arg_3,  arg_4,
+				 arg_5,  arg_6,  arg_7,  arg_8,  arg_9,
+				 arg_10, arg_11, arg_12, arg_13);
+	}
+
+	printf("ERROR:bogus opcode...");
+	return -1;
+
 }
 
+// Validated
 int cmds_init(iMUSEInitData * initDataPtr)
 {
 	if (cmd_initDataPtr) {
 		printf("ERROR:system already initialized...");
 		return -1;
 	}
-	if (!initDataPtr) {
+	if (initDataPtr == NULL) {
 		printf("ERROR: null initDataPtr...");
 		return -1;
 	}
@@ -158,6 +163,7 @@ int cmds_init(iMUSEInitData * initDataPtr)
 	return 48;
 }
 
+// Validated
 int cmds_deinit()
 {
 	cmd_initDataPtr = NULL;
@@ -174,6 +180,8 @@ int cmds_deinit()
 	cmd_runningHostCount = 0;
 	cmd_running60HzCount = 0;
 	cmd_running10HzCount = 0;
+
+	return 0;
 }
 
 // Validated
@@ -195,22 +203,24 @@ int cmds_print(int param1, int param2, int param3, int param4, int param5, int p
 	return printf("%d %d %d %d %d %d %d", param1, param2, param3, param4, param5, param6, param7);
 }
 
+// Validated
 int cmds_pause()
 {
 	int result = 0;
 
-	if (!cmd_pauseCount) {
+	if (cmd_pauseCount == 0) {
 		result = wave_pause();
 	}
-	cmd_pauseCount++;
+	
 	if (!result) {
-		return cmd_pauseCount;
+		result = cmd_pauseCount + 1;
 	}
-	else {
-		return result;
-	}
+	cmd_pauseCount++;
+
+	return result;
 }
 
+// Validated
 int cmds_resume()
 {
 	int result = 0;
@@ -218,71 +228,91 @@ int cmds_resume()
 	if (cmd_pauseCount == 1) {
 		result = wave_resume();
 	}
-	cmd_pauseCount--;
+
+	if (cmd_pauseCount != 0) {
+		cmd_pauseCount--;
+	}
+
 	if (!result) {
 		result = cmd_pauseCount;
 	}
-	else {
-		return result;
-	}
+	
+	return result;
 }
 
-int cmds_save(unsigned char * buffer, int sizeLeft)
+// Validated
+int cmds_save(int * buffer, int bufferSize)
 {
-	if (sizeLeft < 10000) {
-		printf("save buffer too small...");
+	if (bufferSize < 10000) {
+		printf("ERR: save buffer too small...");
 		return -1;
 	}
 
-	*(__int32*)(buffer + 0) = 48;
-	*(__int32*)(buffer + 4) = cmd_initDataPtr->waveMixCount;
-	int size_fades = fades_save((buffer + 8), sizeLeft - 8);
-	if (size_fades < 0)
-		return size_fades;
-	int total_size = size_fades + 8;
-	int size_triggers = triggers_save(buffer + total_size, sizeLeft - total_size);
-	if (size_triggers < 0)
-		return size_triggers;
-	total_size += size_triggers;
-	int size_wave = wave_save(buffer + total_size, sizeLeft - total_size);
-	if (size_wave < 0)
-		return size_wave;
-	return size_wave + total_size;
+	buffer[0] = 0x30;
+	buffer[1] = *(int*) cmd_initDataPtr->waveMixCount;
+	int savedSize = fades_save((buffer + 8), bufferSize - 8);
+	if (savedSize >= 0) {
+		int tmpSize = savedSize + 8;
+		savedSize = triggers_save(buffer + tmpSize, bufferSize - tmpSize);
+		if (savedSize >= 0) {
+			tmpSize += savedSize;
+		}
+		savedSize = wave_save(buffer + tmpSize, bufferSize - tmpSize);
+		if (savedSize >= 0)
+			savedSize += tmpSize;
+	}
+	return savedSize;
 }
 
-int cmds_restore(unsigned char * buffer)
+// Validated
+int cmds_restore(int * buffer)
 {
 	fades_moduleDeinit();
 	triggers_clear();
 	wave_stopAllSounds();
-	if (*(__int32 *)(buffer + 0) != 48) {
-		printf("restore buffer contains bad data..");
+	if (buffer[0] != 0x30) {
+		printf("ERR: restore buffer contains bad data...");
 		return -1;
 	}
-	if (*(__int32 *)(buffer + 4) != cmd_initDataPtr->waveMixCount) {
-		printf("waveMixCount changed between save ");
+
+	if (buffer[1] != *(int *) cmd_initDataPtr->waveMixCount) {
+		printf("ERR: waveMixCount changed between save ");
 		return -1;
 	}
-	int size_fades = fades_restore(buffer + 8);
-	int size_triggers = triggers_restore(size_fades + 8 + buffer);
-	int size_wave = wave_restore(size_fades + 8 + size_triggers + buffer);
-	return size_fades + 8 + size_triggers + size_wave;
+
+	int fadesSize = fades_restore(buffer + 2);
+	int triggersSize = triggers_restore(buffer + fadesSize + 8);
+	int waveSize = wave_restore(buffer + fadesSize + triggersSize + 8);
+	return fadesSize + triggersSize + waveSize + 8;
 }
 
+// Validated
 int cmds_startSound(int soundId, int priority)
 {
 	int src = files_getSoundAddrData(soundId);
-	if (!src) {
-		printf("null sound addr in StartSound()...");
+	int stringIndex = 0;
+
+	if (src == NULL) {
+		printf("ERR: null sound addr in StartSound()...");
 		return -1;
 	}
 
-	if (*(uint32_t *)src != TO_LE32('iMUS'))
-		return -1;
+	// Check for the "iMUS" header
+	char *iMUSstring = (char*)TO_LE32("iMUS");
+	do {
+		if (*(char *)(src + stringIndex) != iMUSstring[stringIndex])
+			break;
+		stringIndex += 1;
+	} while (stringIndex < 4);
 
-	return wave_startSound(priority, soundId);
+	if (stringIndex == 4) {
+		return wave_startSound(soundId, priority);
+	}
+	
+	return -1;
 }
 
+// Validated
 int cmds_stopSound(int soundId)
 {
 	int result = files_getNextSound(soundId);
@@ -291,6 +321,7 @@ int cmds_stopSound(int soundId)
 	return wave_stopSound(soundId);
 }
 
+// Validated
 int cmds_stopAllSounds()
 {
 	int result = fades_moduleDeinit();
@@ -299,11 +330,13 @@ int cmds_stopAllSounds()
 	return result;
 }
 
+// Validated
 int cmds_getNextSound(int soundId)
 {
 	return wave_getNextSound(soundId);
 }
 
+// Validated
 int cmds_setParam(int soundId, int subCmd, int value)
 {
 	int result = files_getNextSound(soundId);
@@ -312,24 +345,26 @@ int cmds_setParam(int soundId, int subCmd, int value)
 	return wave_setParam(soundId, subCmd, value);
 }
 
+// Validated
 int cmds_getParam(int soundId, int subCmd)
 {
 	int result = files_getNextSound(soundId);
-	if (!subCmd)
-		return result;
-	if (subCmd == 0x200) {
-		return triggers_countPendingSounds(soundId);
-	}
-	if (result == 2) {
-		return wave_getParam(soundId, subCmd);
-	}
-	else {
-		return ((subCmd - 0x100) < 1) - 1;
+	if (subCmd != 0) {
+		if (subCmd == 0x200) {
+			return triggers_countPendingSounds(soundId);
+		}
+
+		if (result == 2) {
+			return wave_getParam(soundId, subCmd);
+		}
+
+		result = (subCmd == 0x100) - 1;
 	}
 
 	return result;
 }
 
+// Validated
 int cmds_setHook(int soundId, int hookId)
 {
 	int result = files_getNextSound(soundId);
@@ -338,6 +373,7 @@ int cmds_setHook(int soundId, int hookId)
 	return wave_setHook(soundId, hookId);
 }
 
+// Validated
 int cmds_getHook(int soundId)
 {
 	int result = files_getNextSound(soundId);
@@ -346,7 +382,15 @@ int cmds_getHook(int soundId)
 	return wave_getHook(soundId);
 }
 
+// Validated
 int cmds_debug()
 {
+	printf("initImuseDataPtr: %p", cmd_initDataPtr);
+	printf("pauseCount: %d", cmd_pauseCount);
+	printf("hostIntHandler: %p", cmd_hostIntHandler);
+	printf("hostIntUsecCount: %d", cmd_hostIntUsecCount);
+	printf("runningHostCount: %d", cmd_runningHostCount);
+	printf("running60HzCount: %d", cmd_running60HzCount);
+	printf("running10HzCount: %d", cmd_running10HzCount);
 	return 0;
 }
