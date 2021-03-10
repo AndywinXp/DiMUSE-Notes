@@ -10,7 +10,7 @@ void iMUSEHeartbeat();
 
 int handleCmds(int cmd, int arg_0, int arg_1, int arg_2, int arg_3, int arg_4,
 						int arg_5, int arg_6, int arg_7, int arg_8, int arg_9,
-						int arg_10, int arg_11, int arg_12, int arg_13, int arg_14);
+						int arg_10, int arg_11, int arg_12, int arg_13);
 
 int cmds_init(iMUSEInitData *initDataPtr);
 int cmds_deinit();
@@ -19,7 +19,7 @@ int cmds_persistence(int cmd, void *funcCall);
 int cmds_print(int param1, int param2, int param3, int param4, int param5, int param6, int param7);
 int cmds_pause();
 int cmds_resume();
-int cmds_save(int *buffer, int sizeLeft);
+int cmds_save(int *buffer, int bufferSize);
 int cmds_restore(int *buffer);
 int cmds_startSound(int soundId, int priority);
 int cmds_stopSound(int soundId);

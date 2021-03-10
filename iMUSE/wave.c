@@ -1,5 +1,6 @@
 #include "wave.h"
 
+// Validated
 int wave_init(iMUSEInitData *initDataPtr) {
 	if (tracks_init(initDataPtr))
 		return -1;
@@ -7,10 +8,12 @@ int wave_init(iMUSEInitData *initDataPtr) {
 	return 0;
 }
 
+// Validated
 int wave_terminate() {
 	return 0;
 }
 
+// Validated
 int wave_pause() {
 	wvSlicingHalted++;
 	tracks_pause();
@@ -20,6 +23,7 @@ int wave_pause() {
 	return 0;
 }
 
+// Validated
 int wave_resume() {
 	wvSlicingHalted++;
 	tracks_resume();
@@ -29,9 +33,10 @@ int wave_resume() {
 	return 0;
 }
 
-int wave_save(unsigned char *buffer, int sizeLeft) {
+// Validated
+int wave_save(unsigned char *buffer, int bufferSize) {
 	wvSlicingHalted++;
-	int result = tracks_save(buffer, sizeLeft);
+	int result = tracks_save(buffer, bufferSize);
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}
@@ -39,6 +44,7 @@ int wave_save(unsigned char *buffer, int sizeLeft) {
 	return result;
 }
 
+// Validated
 int wave_restore(unsigned char *buffer) {
 	wvSlicingHalted++;
 	int result = tracks_restore(buffer);
@@ -48,6 +54,7 @@ int wave_restore(unsigned char *buffer) {
 	return result;
 }
 
+// Validated
 int wave_setGroupVol() {
 	wvSlicingHalted++;
 	int result = tracks_setGroupVol();
@@ -57,6 +64,7 @@ int wave_setGroupVol() {
 	return result;
 }
 
+// Validated
 int wave_startSound(int soundId, int priority) {
 	wvSlicingHalted++;
 	int result = tracks_startSound(soundId, priority, 0);
@@ -66,6 +74,7 @@ int wave_startSound(int soundId, int priority) {
 	return result;
 }
 
+// Validated
 int wave_stopSound(int soundId) {
 	wvSlicingHalted++;
 	int result = tracks_stopSound(soundId);
@@ -75,6 +84,7 @@ int wave_stopSound(int soundId) {
 	return result;
 }
 
+// Validated
 int wave_stopAllSounds() {
 	wvSlicingHalted++;
 	int result = tracks_stopAllSounds();
@@ -84,6 +94,7 @@ int wave_stopAllSounds() {
 	return result;
 }
 
+// Validated
 int wave_getNextSound(int soundId) {
 	wvSlicingHalted++;
 	int result = tracks_getNextSound(soundId);
@@ -93,6 +104,7 @@ int wave_getNextSound(int soundId) {
 	return result;
 }
 
+// Validated
 int wave_setParam(int soundId, int opcode, int value) {
 	wvSlicingHalted++;
 	int result = tracks_setParam(soundId, opcode, value);
@@ -102,6 +114,7 @@ int wave_setParam(int soundId, int opcode, int value) {
 	return result;
 }
 
+// Validated
 int wave_getParam(int soundId, int opcode) {
 	wvSlicingHalted++;
 	int result = tracks_getParam(soundId, opcode);
@@ -111,34 +124,39 @@ int wave_getParam(int soundId, int opcode) {
 	return result;
 }
 
+// Validated
 int wave_setHook(int soundId, int hookId) {
 	return tracks_setHook(soundId, hookId);
 }
 
+// Validated
 int wave_getHook(int soundId) {
 	return tracks_getHook(soundId);
 }
 
-int wave_startStream(int oldSoundId, int newSoundId, int param) {
-	if (!files_checkRange(oldSoundId))
+// Validated
+int wave_startSoundInGroup(int soundId, int priority, int groupId) {
+	if (!files_checkRange(soundId))
 		return -1;
 	wvSlicingHalted++;
-	int result = tracks_startStream(oldSoundId, newSoundId, param);
+	int result = tracks_startSound(soundId, priority, groupId);
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}
 	return result;
 }
 
-int wave_switchStream(int oldSoundId, int soundId, int param3, int fadeSyncFlag2, int fadeSyncFlag1) {
+// Validated
+int wave_switchStream(int oldSoundId, int newSoundId, int fadeLengthMs, int fadeSyncFlag2, int fadeSyncFlag1) {
 	wvSlicingHalted++;
-	int result = dispatch_switchStream(oldSoundId, soundId, param3, fadeSyncFlag2, fadeSyncFlag1);
+	int result = dispatch_switchStream(oldSoundId, newSoundId, fadeLengthMs, fadeSyncFlag2, fadeSyncFlag1);
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}
 	return result;
 }
 
+// Validated
 int wave_processStreams() {
 	wvSlicingHalted++;
 	int result = streamer_processStreams();
@@ -148,7 +166,9 @@ int wave_processStreams() {
 	return result;
 }
 
-int wave_queryStream(int soundId, int sampleRate, int param3, int param4, int param5) {
+// Validated
+// TODO: rename and retype args
+int wave_queryStream(int soundId, int sampleRate, int param3, int param4, char param5) {
 	wvSlicingHalted++;
 	int result = tracks_queryStream(soundId, sampleRate, param3, param4, param5);
 	if (wvSlicingHalted) {
@@ -157,6 +177,8 @@ int wave_queryStream(int soundId, int sampleRate, int param3, int param4, int pa
 	return result;
 }
 
+// Validated
+// TODO: rename and retype args
 int wave_feedStream(int soundId, int param2, int param3, int param4) {
 	wvSlicingHalted++;
 	int result = tracks_feedStream(soundId, param2, param3, param4);
@@ -166,6 +188,7 @@ int wave_feedStream(int soundId, int param2, int param3, int param4) {
 	return result;
 }
 
-int wave_lipSync(int soundId, int syncId, int msPos, int width, char height) {
+// Validated
+int wave_lipSync(int soundId, int syncId, int msPos, int *width, int *height) {
 	return tracks_lipSync(soundId, syncId, msPos, width, height);
 }

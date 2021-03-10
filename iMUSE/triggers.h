@@ -43,13 +43,13 @@ iMUSEDefers defers[MAX_DEFERS];
 
 int  triggers_moduleInit(iMUSEInitData *initDataPtr);
 int  triggers_clear();
-int  triggers_save(unsigned char *buffer, int sizeLeft);
-int  triggers_restore(unsigned char *buffer);
+int  triggers_save(int *buffer, int bufferSize);
+int  triggers_restore(int *buffer);
 int  triggers_setTrigger(int soundId, char *marker, int opcode);
 int  triggers_checkTrigger(int soundId, char *marker, int opcode);
 int  triggers_clearTrigger(int soundId, char *marker, int opcode);
 void triggers_processTriggers(int soundId, char *marker);
-int  triggers_deferCommand(int count, void *opcode_and_params);
+int  triggers_deferCommand(int count, int opcode);
 void triggers_loop();
 int  triggers_countPendingSounds(int soundId);
 int  triggers_moduleFree();
@@ -61,6 +61,6 @@ int  triggers_defersOn;
 int  triggers_midProcessing;
 iMUSEInitData * triggers_initDataPtr;
 char triggers_textBuffer[256];
-char triggers_empty_marker[256];
+char triggers_empty_marker = '\0';
 
 #endif

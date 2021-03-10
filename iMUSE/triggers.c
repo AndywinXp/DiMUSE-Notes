@@ -5,10 +5,11 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// Validated
 int triggers_moduleInit(iMUSEInitData * initDataPtr)
 {
 	triggers_initDataPtr = initDataPtr;
-	for (int l = 0; l < 8; l++) {
+	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		trigs[l].sound = 0;
 		defers[l].counter = 0;
 	}
@@ -17,6 +18,7 @@ int triggers_moduleInit(iMUSEInitData * initDataPtr)
 	return 0;
 }
 
+// Validated
 int triggers_clear()
 {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
@@ -28,9 +30,12 @@ int triggers_clear()
 	return 0;
 }
 
-int triggers_save(unsigned char * buffer, int sizeLeft)
+// Validated
+// Should I remove the memcpy call replacing it with
+// no-library code?
+int triggers_save(int * buffer, int bufferSize)
 {
-	if (sizeLeft < 2848) {
+	if (bufferSize < 2848) {
 		return -5;
 	}
 	memcpy(buffer, trigs, 2464);
@@ -38,7 +43,10 @@ int triggers_save(unsigned char * buffer, int sizeLeft)
 	return 2848;
 }
 
-int triggers_restore(unsigned char * buffer)
+// Validated
+// Should I remove the memcpy call replacing it with
+// no-library code?
+int triggers_restore(int * buffer)
 {
 	memcpy(trigs, buffer, 2464);
 	memcpy(defers, buffer + 2464, 384);
@@ -46,12 +54,15 @@ int triggers_restore(unsigned char * buffer)
 	return 2848;
 }
 
+// Validated
 int triggers_setTrigger(int soundId, char * marker, int opcode)
 {
-	if (!soundId)
+	if (soundId == 0) {
 		return -5;
-	if (!marker) {
-		marker = triggers_empty_marker;
+	}
+
+	if (marker == NULL) {
+		marker = &triggers_empty_marker;
 	}
 
 	if (triggers_getMarkerLength(marker) >= 256) {
@@ -59,22 +70,22 @@ int triggers_setTrigger(int soundId, char * marker, int opcode)
 		return -5;
 	}
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
-		if (!trigs[l].sound) {
+		if (trigs[l].sound == 0) {
 			trigs[l].sound = soundId;
 			trigs[l].clearLater = 0;
 			trigs[l].opcode = opcode;
 			triggers_copyTEXT(trigs[l].text, marker);
-			__int32* ptr = &opcode; // args after opcode
-			trigs[l].args_0_ = *(__int32 *)(ptr + 4);
-			trigs[l].args_1_ = *(__int32 *)(ptr + 8);
-			trigs[l].args_2_ = *(__int32 *)(ptr + 12);
-			trigs[l].args_3_ = *(__int32 *)(ptr + 16);
-			trigs[l].args_4_ = *(__int32 *)(ptr + 20);
-			trigs[l].args_5_ = *(__int32 *)(ptr + 24);
-			trigs[l].args_6_ = *(__int32 *)(ptr + 28);
-			trigs[l].args_7_ = *(__int32 *)(ptr + 32);
-			trigs[l].args_8_ = *(__int32 *)(ptr + 36);
-			trigs[l].args_9_ = *(__int32 *)(ptr + 40);
+			int* ptr = &opcode; // args after opcode
+			trigs[l].args_0_ = *(int *)(ptr + 4);
+			trigs[l].args_1_ = *(int *)(ptr + 8);
+			trigs[l].args_2_ = *(int *)(ptr + 12);
+			trigs[l].args_3_ = *(int *)(ptr + 16);
+			trigs[l].args_4_ = *(int *)(ptr + 20);
+			trigs[l].args_5_ = *(int *)(ptr + 24);
+			trigs[l].args_6_ = *(int *)(ptr + 28);
+			trigs[l].args_7_ = *(int *)(ptr + 32);
+			trigs[l].args_8_ = *(int *)(ptr + 36);
+			trigs[l].args_9_ = *(int *)(ptr + 40);
 			return 0;
 		}
 	}
@@ -82,16 +93,17 @@ int triggers_setTrigger(int soundId, char * marker, int opcode)
 	return -6;
 }
 
+// Validated
 int triggers_checkTrigger(int soundId, char * marker, int opcode)
 {
 	int r = 0;
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
-		if (!trigs[l].sound)
-			continue;
-		if (soundId == -1 || trigs[l].sound == soundId) {
-			if (marker|| !triggers_compareTEXT(marker, trigs[l].text)) {
-				if (opcode == -1 || trigs[l].opcode == opcode)
-					r++;
+		if (trigs[l].sound != 0) {
+			if (soundId == -1 || trigs[l].sound == soundId) {
+				if (marker == -1 || !triggers_compareTEXT(marker, trigs[l].text)) {
+					if (opcode == -1 || trigs[l].opcode == opcode)
+						r++;
+				}
 			}
 		}
 	}
@@ -99,90 +111,94 @@ int triggers_checkTrigger(int soundId, char * marker, int opcode)
 	return r;
 }
 
+// Validated
 int triggers_clearTrigger(int soundId, char * marker, int opcode)
 {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
-		if (!trigs[l].sound)
-			continue;
-		if (soundId != -1 && trigs[l].sound != soundId)
-			continue;
-		if (marker && triggers_compareTEXT(marker, trigs[l].text))
-			continue;
-		if (opcode != -1 && trigs[l].opcode != opcode)
-			continue;
-		if (triggers_midProcessing) {
-			trigs[l].clearLater = 1;
+		if ((trigs[l].sound != 0) && (soundId == -1 || trigs[l].sound == soundId) &&
+			(marker || !triggers_compareTEXT(marker, trigs[l].text)) &&
+			(opcode == -1 || trigs[l].opcode == opcode)) {
+			
+			if (triggers_midProcessing) {
+				trigs[l].clearLater = 1;
+			} else {
+				trigs[l].sound = 0;
+			}
 		}
-		else {
-			trigs[l].sound = 1;
-		}
-		return 0;
 	}
+	return 0;
 }
 
+// Validated
 void triggers_processTriggers(int soundId, char * marker)
 {
 	char textBuffer[256];
 	int r;
 	if (triggers_getMarkerLength(marker) >= 256) {
-		printf("passed oversize marker string...");
+		printf("ERR: TgProcessMarker() passed oversize marker string...");
 		return;
 	}
 	triggers_copyTEXT(triggers_textBuffer, marker);
 	triggers_midProcessing++;
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
-		if (!trigs[l].sound)
-			continue;
-		if (trigs[l].sound != soundId)
-			continue;
-		if (!trigs[l].text[0] && triggers_compareTEXT(triggers_textBuffer, trigs[l].text))
-			continue;
-		if (triggers_textBuffer[0]) {
+		if ((trigs[l].sound && trigs[l].sound == soundId) &&
+			(trigs[l].text[0] == '\0' || triggers_compareTEXT(triggers_textBuffer, trigs[l].text))) {
+			
+			// Save the string into our local buffer for later
 			r = 0;
-			do {
-				textBuffer[r] = triggers_textBuffer[r];
-			} while (triggers_textBuffer[r++]);
-		}
-		textBuffer[r] = 0;
-		trigs[l].sound = 0;
-		if (trigs[l].opcode) {
-			if (trigs[l].opcode < 30) {
-				handleCmds(trigs[l].opcode, trigs[l].args_0_,
-					trigs[l].args_1_, trigs[l].args_2_,
-					trigs[l].args_3_, trigs[l].args_4_,
-					trigs[l].args_5_, trigs[l].args_6_,
-					trigs[l].args_7_, trigs[l].args_8_,
-					trigs[l].args_9_);
+			if (triggers_textBuffer[0] != '\0') {
+				do {
+					textBuffer[r] = triggers_textBuffer[r];
+					r++;
+				} while (triggers_textBuffer[r] != '\0');
 			}
-			else { // WTF
-				trigs[l].opcode(trigs[l].text, trigs[l].args_0_,
-					trigs[l].args_1_, trigs[l].args_2_,
-					trigs[l].args_3_, trigs[l].args_4_,
-					trigs[l].args_5_, trigs[l].args_6_,
-					trigs[l].args_7_, trigs[l].args_8_,
-					trigs[l].args_9_);
+			textBuffer[r] = '\0';
+
+			trigs[l].sound = 0;
+			if (trigs[l].opcode == NULL) {
+				if (triggers_initDataPtr == NULL || triggers_initDataPtr->scriptCallback == NULL) {
+					printf("ERR: null callback in InitData struct...");
+				} else {
+					// Call the script callback (which is usually a function which
+					// the current sequence when _stoppingSequence == 1
+					triggers_initDataPtr->scriptCallback(triggers_textBuffer, trigs[l].args_0_,
+						trigs[l].args_1_, trigs[l].args_2_,
+						trigs[l].args_3_, trigs[l].args_4_,
+						trigs[l].args_5_, trigs[l].args_6_,
+						trigs[l].args_7_, trigs[l].args_8_,
+						trigs[l].args_9_);
+				}
+			} else {
+				if ((int) trigs[l].opcode < 30) {
+					// Execute a command
+					handleCmds((int) trigs[l].opcode, trigs[l].args_0_,
+						trigs[l].args_1_, trigs[l].args_2_,
+						trigs[l].args_3_, trigs[l].args_4_,
+						trigs[l].args_5_, trigs[l].args_6_,
+						trigs[l].args_7_, trigs[l].args_8_,
+						trigs[l].args_9_, -1, -1, -1, -1);
+				} else {
+					// The opcode field is not a command opcode but a pointer to function
+					int(*func)() = trigs[l].opcode;
+					func(triggers_textBuffer, trigs[l].args_0_,
+						trigs[l].args_1_, trigs[l].args_2_,
+						trigs[l].args_3_, trigs[l].args_4_,
+						trigs[l].args_5_, trigs[l].args_6_,
+						trigs[l].args_7_, trigs[l].args_8_,
+						trigs[l].args_9_);
+				}
 			}
-		}
-		else if (!defers[l].opcode) {
-			if (!triggers_initDataPtr || !triggers_initDataPtr->scriptCallback) {
-				printf("null callback in InitData struct...");
-			}
-			else {
-				triggers_initDataPtr->scriptCallback(trigs[l].text, trigs[l].args_0_,
-					trigs[l].args_1_, trigs[l].args_2_,
-					trigs[l].args_3_, trigs[l].args_4_,
-					trigs[l].args_5_, trigs[l].args_6_,
-					trigs[l].args_7_, trigs[l].args_8_,
-					trigs[l].args_9_);
-			}
-		}
-		if (textBuffer[0]) {
+
+			// Restore the global textBuffer
 			r = 0;
-			do {
-				triggers_textBuffer[r] = textBuffer[r];
-			} while (textBuffer[r++]);
+			if (textBuffer[0] != '\0') {
+				do {
+					triggers_textBuffer[r] = textBuffer[r];
+					r++;
+				} while (textBuffer[r] != '\0');
+			}
+			triggers_textBuffer[r] = '\0';
 		}
-		trigs[l].text[0] = 0;
 	}
 	if (--triggers_midProcessing == 0) {
 		for (int l = 0; l < MAX_TRIGGERS; l++) {
@@ -193,26 +209,27 @@ void triggers_processTriggers(int soundId, char * marker)
 	}
 }
 
-int triggers_deferCommand(int count, void * opcode_and_params)
+// Validated
+int triggers_deferCommand(int count, int opcode)
 {
 	if (!count) {
 		return -5;
 	}
 	for (int l = 0; l < MAX_DEFERS; l++) {
 		if (!defers[l].counter) {
-			defers[l].opcode = *(__int32 *)(opcode_and_params);
-			__int32 *ptr = (__int32 *) opcode_and_params;
-			defers[l].args_0_ = *(__int32 *)(ptr + 4);
-			defers[l].args_1_ = *(__int32 *)(ptr + 8);
-			defers[l].args_2_ = *(__int32 *)(ptr + 12);
-			defers[l].args_3_ = *(__int32 *)(ptr + 16);
-			defers[l].args_4_ = *(__int32 *)(ptr + 20);
-			defers[l].args_5_ = *(__int32 *)(ptr + 24);
-			defers[l].args_6_ = *(__int32 *)(ptr + 28);
-			defers[l].args_7_ = *(__int32 *)(ptr + 32);
-			defers[l].args_8_ = *(__int32 *)(ptr + 36);
-			defers[l].args_9_ = *(__int32 *)(ptr + 40);
 			defers[l].counter = count;
+			defers[l].opcode = opcode;
+			int* ptr = &opcode;
+			defers[l].args_0_ = *(int *)(ptr + 4);
+			defers[l].args_1_ = *(int *)(ptr + 8);
+			defers[l].args_2_ = *(int *)(ptr + 12);
+			defers[l].args_3_ = *(int *)(ptr + 16);
+			defers[l].args_4_ = *(int *)(ptr + 20);
+			defers[l].args_5_ = *(int *)(ptr + 24);
+			defers[l].args_6_ = *(int *)(ptr + 28);
+			defers[l].args_7_ = *(int *)(ptr + 32);
+			defers[l].args_8_ = *(int *)(ptr + 36);
+			defers[l].args_9_ = *(int *)(ptr + 40);
 			triggers_defersOn = 1;
 			return 0;
 		}
@@ -221,6 +238,7 @@ int triggers_deferCommand(int count, void * opcode_and_params)
 	return -6;
 }
 
+// Validated
 void triggers_loop()
 {
 	if (!triggers_defersOn)
@@ -228,45 +246,49 @@ void triggers_loop()
 
 	triggers_defersOn = 0;
 	for (int l = 0; l < MAX_DEFERS; l++) {
-		if (!defers[l].counter)
+		if (defers[l].counter == 0)
 			continue;
+
 		triggers_defersOn = 1;
-		if (--defers[l].counter == 0)
-			continue;
-		if (defers[l].opcode) {
-			if (defers[l].opcode < 30) {
-				handleCmds(trigs[l].opcode,
-					trigs[l].args_0_, trigs[l].args_1_,
-					trigs[l].args_2_, trigs[l].args_3_,
-					trigs[l].args_4_, trigs[l].args_5_,
-					trigs[l].args_6_, trigs[l].args_7_,
-					trigs[l].args_8_, trigs[l].args_9_);
-			}
-			else {
-				trigs[l].opcode(trigs[l].text,
-					trigs[l].args_0_, trigs[l].args_1_,
-					trigs[l].args_2_, trigs[l].args_3_,
-					trigs[l].args_4_, trigs[l].args_5_,
-					trigs[l].args_6_, trigs[l].args_7_,
-					trigs[l].args_8_, trigs[l].args_9_);
-			}
-		}
-		else {
-			if (!triggers_initDataPtr || !triggers_initDataPtr->scriptCallback) {
-				printf("null callback in InitData struct...");
-			}
-			else {
-				triggers_initDataPtr->scriptCallback(trigs[l].text,
-					trigs[l].args_0_, trigs[l].args_1_,
-					trigs[l].args_2_, trigs[l].args_3_,
-					trigs[l].args_4_, trigs[l].args_5_,
-					trigs[l].args_6_, trigs[l].args_7_,
-					trigs[l].args_8_, trigs[l].args_9_);
+		defers[l].counter--;
+
+		// For some reason it processes the defer at counter 1 instead of 0...
+		// Oh well
+		if (defers[l].counter == 1) {
+			if (defers[l].opcode != NULL) {
+				if ((int) defers[l].opcode < 30) {
+					handleCmds((int) trigs[l].opcode,
+						trigs[l].args_0_, trigs[l].args_1_,
+						trigs[l].args_2_, trigs[l].args_3_,
+						trigs[l].args_4_, trigs[l].args_5_,
+						trigs[l].args_6_, trigs[l].args_7_,
+						trigs[l].args_8_, trigs[l].args_9_, -1, -1, -1, -1);
+				} else {
+					int(*func)() = trigs[l].opcode;
+					func(trigs[l].text,
+						trigs[l].args_0_, trigs[l].args_1_,
+						trigs[l].args_2_, trigs[l].args_3_,
+						trigs[l].args_4_, trigs[l].args_5_,
+						trigs[l].args_6_, trigs[l].args_7_,
+						trigs[l].args_8_, trigs[l].args_9_);
+				}
+			} else {
+				if (triggers_initDataPtr->scriptCallback == NULL) {
+					printf("ERR: null callback in InitData struct...");
+				} else {
+					triggers_initDataPtr->scriptCallback(trigs[l].text,
+						trigs[l].args_0_, trigs[l].args_1_,
+						trigs[l].args_2_, trigs[l].args_3_,
+						trigs[l].args_4_, trigs[l].args_5_,
+						trigs[l].args_6_, trigs[l].args_7_,
+						trigs[l].args_8_, trigs[l].args_9_);
+				}
 			}
 		}
 	}
 }
 
+// Validated
 int triggers_countPendingSounds(int soundId)
 {
 	int r = 0;
@@ -275,7 +297,7 @@ int triggers_countPendingSounds(int soundId)
 			continue;
 
 		int opcode = trigs[l].opcode;
-		if (opcode == 8 && trigs[l].args_0_ == soundId || opcode == 26 && trigs[l].args_1_ == soundId)
+		if ((opcode == 8 && trigs[l].args_0_ == soundId) || (opcode == 26 && trigs[l].args_1_ == soundId))
 			r++;
 	}
 
@@ -284,13 +306,14 @@ int triggers_countPendingSounds(int soundId)
 			continue;
 
 		int opcode = defers[l].opcode;
-		if (opcode == 8 && defers[l].args_0_ == soundId || opcode == 26 && defers[l].args_1_ == soundId)
+		if ((opcode == 8 && defers[l].args_0_ == soundId) || (opcode == 26 && defers[l].args_1_ == soundId))
 			r++;
 	}
 
 	return r;
 }
 
+// Validated
 int triggers_moduleFree()
 {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
@@ -302,19 +325,52 @@ int triggers_moduleFree()
 	return 0;
 }
 
+// Validated
+// Probably just a strcpy, but if there's undefined behavior it's best to match it
 void triggers_copyTEXT(char * dst, char * marker)
 {
-	if (!dst || !marker)
-		return;
-	strcpy(dst, marker);
+	char currentChar;
+
+	if ((dst != NULL) && (marker != NULL)) {
+		do {
+			currentChar = *marker;
+			marker = marker + 1;
+			*dst = currentChar;
+			dst = dst + 1;
+		} while (currentChar != '\0');
+	}
+	return;
 }
 
+// Validated
+// Probably just a stricmp, but if there's undefined behavior it's best to match it
 int triggers_compareTEXT(char * marker1, char * marker2)
 {
-	return stricmp(marker1, marker2);
+	if (*marker1 != 0) {
+		while ((*marker2 != 0 && (*marker1 == *marker2))) {
+			marker1 = marker1 + 1;
+			marker2 = marker2 + 1;
+			if (*marker1 == 0) {
+				return (int)(char)(*marker2 | *marker1);
+			}
+		}
+	}
+	return (int)(char)(*marker2 | *marker1);
 }
 
+// Validated
+// Probably just a strlen, but if there's undefined behavior it's best to match it
 int triggers_getMarkerLength(char * marker)
 {
-	return strlen(marker);
+	int resultingLength;
+	char curChar;
+
+	resultingLength = 0;
+	curChar = *marker;
+	while (curChar != '\0') {
+		marker = marker + 1;
+		resultingLength += 1;
+		curChar = *marker;
+	}
+	return resultingLength;
 }
