@@ -117,22 +117,30 @@
   <ItemGroup>
     <ClCompile Include="commands.c" />
     <ClCompile Include="Digital_iMUSE.c" />
+    <ClCompile Include="dispatch.c" />
     <ClCompile Include="fades.c" />
     <ClCompile Include="files.c" />
     <ClCompile Include="groups.c" />
+    <ClCompile Include="streamer.c" />
+    <ClCompile Include="waveapi.c" />
     <ClCompile Include="timer.c" />
+    <ClCompile Include="tracks.c" />
     <ClCompile Include="triggers.c" />
     <ClCompile Include="wave.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands.h" />
+    <ClInclude Include="dispatch.h" />
     <ClInclude Include="fades.h" />
     <ClInclude Include="files.h" />
     <ClInclude Include="groups.h" />
     <ClInclude Include="imuse.h" />
+    <ClInclude Include="streamer.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="tracks.h" />
     <ClInclude Include="triggers.h" />
     <ClInclude Include="wave.h" />
+    <ClInclude Include="waveapi.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

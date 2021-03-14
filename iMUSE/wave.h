@@ -1,9 +1,9 @@
-#ifndef DIGITAL_IMUSE_wave
-#define DIGITAL_IMUSE_wave
+#ifndef DIGITAL_IMUSE_WAVE
+#define DIGITAL_IMUSE_WAVE
 
 #include "imuse.h"
 
-int wvSlicingHalted;
+int wvSlicingHalted = 1;
 
 int wave_init(iMUSEInitData *initDataPtr);
 int wave_terminate();

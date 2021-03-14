@@ -171,7 +171,7 @@ void triggers_processTriggers(int soundId, char * marker)
 			} else {
 				if ((int) trigs[l].opcode < 30) {
 					// Execute a command
-					handleCmds((int) trigs[l].opcode, trigs[l].args_0_,
+					cmds_handleCmds((int) trigs[l].opcode, trigs[l].args_0_,
 						trigs[l].args_1_, trigs[l].args_2_,
 						trigs[l].args_3_, trigs[l].args_4_,
 						trigs[l].args_5_, trigs[l].args_6_,
@@ -257,7 +257,7 @@ void triggers_loop()
 		if (defers[l].counter == 1) {
 			if (defers[l].opcode != NULL) {
 				if ((int) defers[l].opcode < 30) {
-					handleCmds((int) trigs[l].opcode,
+					cmds_handleCmds((int) trigs[l].opcode,
 						trigs[l].args_0_, trigs[l].args_1_,
 						trigs[l].args_2_, trigs[l].args_3_,
 						trigs[l].args_4_, trigs[l].args_5_,

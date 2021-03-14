@@ -53,11 +53,11 @@ int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLengt
 	if (!fadeLength) {
 		if (opcode != 0x600 || destinationValue) {
 			// IMUSE_CMDS_SetParam
-			handleCmds(12, soundId, opcode, destinationValue, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+			cmds_handleCmds(12, soundId, opcode, destinationValue, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 			return 0;
 		} else {
 			// IMUSE_CMDS_StopSound
-			handleCmds(9, soundId, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+			cmds_handleCmds(9, soundId, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 			return 0;
 		}
 	}
@@ -67,7 +67,7 @@ int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLengt
 			fades[l].sound = soundId;
 			fades[l].param = opcode;
 			// IMUSE_CMDS_GetParam (probably fetches current volume, with opcode 0x600)
-			fades[l].currentVal = handleCmds(13, soundId, opcode, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+			fades[l].currentVal = cmds_handleCmds(13, soundId, opcode, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 			fades[l].length = fadeLength;
 			fades[l].counter = fadeLength;
 			fades[l].slope = (destinationValue - fades[l].currentVal) / fadeLength;
@@ -132,11 +132,11 @@ void fades_loop()
 				if ((fades[l].counter % 6) == 0) {
 					if ((fades[l].param != 0x600) || currentVolume != 0) {
 						// IMUSE_CMDS_SetParam
-						handleCmds(12, fades[l].sound, fades[l].param, currentVolume, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+						cmds_handleCmds(12, fades[l].sound, fades[l].param, currentVolume, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 						continue;
 					} else {
 						// IMUSE_CMDS_StopSound
-						handleCmds(9, fades[l].sound, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+						cmds_handleCmds(9, fades[l].sound, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 					}
 				}
 			}

@@ -39,6 +39,18 @@
     <ClCompile Include="wave.c">
       <Filter>File di origine</Filter>
     </ClCompile>
+    <ClCompile Include="tracks.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="waveapi.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="streamer.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="dispatch.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands.h">
@@ -63,6 +75,18 @@
       <Filter>File di intestazione</Filter>
     </ClInclude>
     <ClInclude Include="wave.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="tracks.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="streamer.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="dispatch.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="waveapi.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>
