@@ -23,6 +23,8 @@ typedef struct {
 
 waveapiParams waveapi_waveFormat;
 waveOutParams waveapi_waveOutParams;
+LPWAVEHDR *waveHeaders;
+HWAVEOUT waveHandle;
 
 int waveapi_sampleRate;
 int waveapi_bytesPerSample;
@@ -31,12 +33,15 @@ int waveapi_zeroLevel;
 int *waveapi_mixBuf;
 int *waveapi_outBuf;
 
-LPWAVEHDR *waveHeaders;
-HWAVEOUT waveHandle;
-
 int waveapi_xorTrigger = 0;
 int waveapi_writeIndex = 0;
 int waveapi_disableWrite = 0;
 
+int waveapi_moduleInit(int sampleRate, waveOutParams *waveoutParamStruct);
+void waveapi_write(LPSTR *lpData, int *feedSize, int *sampleRate);
+int waveapi_free();
+void waveapi_callback();
+void waveapi_increaseSlice();
+int waveapi_decreaseSlice();
 
 #endif
