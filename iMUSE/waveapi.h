@@ -3,15 +3,6 @@
 #include <windows.h>
 
 #define NUM_HEADERS 8
-typedef struct {
-	LPCWAVEFORMATEX wFormatTag;
-	int nChannels;
-	int nSamplesPerSec;
-	int nAvgBytesPerSec;
-	int nBlockAlign;
-	int wBitsPerSample;
-	int cbSize;
-} waveapiParams;
 
 typedef struct {
 	int bytesPerSample;
@@ -21,7 +12,7 @@ typedef struct {
 	int sizeSampleKB;
 } waveOutParams;
 
-waveapiParams waveapi_waveFormat;
+WAVEFORMATEX waveapi_waveFormat;
 waveOutParams waveapi_waveOutParams;
 LPWAVEHDR *waveHeaders;
 HWAVEOUT waveHandle;
