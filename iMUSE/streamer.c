@@ -1,42 +1,48 @@
 #include "streamer.h"
+#include "files.h"
 #include "imuse.h"
 #include <stdio.h>
 
+// Validated
 int streamer_moduleInit() {
-	for (int l = 0; l < 3; l++) {
-		streamer_streams[l]->soundId = 0;
+	for (int l = 0; l < MAX_STREAMS; l++) {
+		streamer_streams[l].soundId = 0;
 	}
-	streamer_lastStreamLoaded = 0;
+	streamer_lastStreamLoaded = NULL;
 	return 0;
 }
 
-void *streamer_alloc(int soundId, int bufID, int32 maxRead) {
-	bufInfoPtr = files_bufInfo(bufID);
+// Validated
+// except for bufInfoPtr
+iMUSEStreams *streamer_alloc(int soundId, int bufId, int maxRead) {
+	int bufInfoPtr = files_bufInfo(bufId);
 	if (!bufInfoPtr) {
-		printf("streamer couldn't get buf info...");
-		return 0;
+		printf("ERR: streamer couldn't get buf info...");
+		return NULL;
 	}
 
-	if ((bufInfoPtr->size / 4) <= maxRead) {
-		printf("maxRead too big for buf...");
+	if ((bufInfoPtr->sizeToFeed / 4) <= maxRead) {
+		printf("ERR: maxRead too big for buf...");
+		return NULL;
 	}
 
-	for (int l = 0; l < 3; l++) {
+	for (int l = 0; l < MAX_STREAMS; l++) {
 		if (streamer_streams[l].soundId && streamer_streams[l].bufId == bufId) {
-			printf("stream bufID %lu already in use...", bufId);
-			return 0;
+			printf("ERR: stream bufID %lu already in use...", bufId);
+			return NULL;
 		}
 	}
-	for (int l = 0; l < 3; l++) {
+
+	for (int l = 0; l < MAX_STREAMS; l++) {
 		if (!streamer_streams[l].soundId) {
 			streamer_streams[l].endOffset = files_seek(soundId, 0, SEEK_END);
 			streamer_streams[l].curOffset = 0;
 			streamer_streams[l].soundId = soundId;
-			streamer_streams[l].bufID = bufID;
-			streamer_streams[l].buf = bufInfoPtr->ptr; // + 0
-			streamer_streams[l].bufFreeSize = bufInfoPtr->size - maxRead - 4; // + 4
-			streamer_streams[l].loadSize = bufInfoPtr->loadSize ? ; // + 8
-			streamer_streams[l].criticalSize = bufInfoPtr->criticalSize ? ; // + 12
+			streamer_streams[l].bufId = bufId;
+			streamer_streams[l].buf = bufInfoPtr->ptr; // Sound buffer; TODO: define and alloc sound buffers (iHost)
+			streamer_streams[l].bufFreeSize = bufInfoPtr->sizeToFeed - maxRead - 4;
+			streamer_streams[l].loadSize = bufInfoPtr->loadSize;
+			streamer_streams[l].criticalSize = bufInfoPtr->criticalSize;
 			streamer_streams[l].maxRead = maxRead;
 			streamer_streams[l].loadIndex = 0;
 			streamer_streams[l].readIndex = 0;
@@ -44,172 +50,177 @@ void *streamer_alloc(int soundId, int bufID, int32 maxRead) {
 			return &streamer_streams[l];
 		}
 	}
-	printf("no spare streams...");
-	return 0;
-
+	printf("ERR: no spare streams...");
+	return NULL;
 }
 
-int streamer_clearSoundInStream(void *streamPtr) {
-	streamPtr->sound = 0;
+// Validated
+int streamer_clearSoundInStream(iMUSEStreams *streamPtr) {
+	streamPtr->soundId = 0;
 	if (streamer_lastStreamLoaded == streamPtr) {
 		streamer_lastStreamLoaded = 0;
 	}
 	return 0;
 }
 
+// Validated
 int streamer_processStreams() {
 	dispatch_predictFirstStream();
-	stream1 = NULL;
-	stream2 = NULL;
-	for (int l = 0; l < 3; l++) {
-		if (!streamer_streams[l].soundId)
-			continue;
-		if (!streamer_streams[l].paused)
-			continue;
-		if (!stream1) {
-			stream1 = streamer_streams[l];
-			continue;
+	iMUSEStreams *stream1 = NULL;
+	iMUSEStreams *stream2 = NULL;
+	iMUSEStreams *stream1_tmp = NULL;
+	iMUSEStreams *stream2_tmp = NULL;
+
+	// Rewrite this mess in a more readable way
+	for (int l = 0; l < MAX_STREAMS; l++) {
+		if ((streamer_streams[l].soundId != 0) && 
+			(!streamer_streams[l].paused) &&
+			(stream1 = &streamer_streams[l], stream1_tmp != NULL) &&
+			(stream1 = stream1_tmp, stream2 = &streamer_streams[l], stream2_tmp != NULL)) {
+			printf("ERR: three streams in use...");
+			stream2 = stream2_tmp;
 		}
-		if (!stream2) {
-			stream2 = streamer_streams[l];
-			continue;
-		}
-		printf("three streams in use...");
+		stream1_tmp = stream1;
+		stream2_tmp = stream2;
 	}
+
 	if (!stream1) {
 		if (stream2)
-			streamer_FetchData(stream2);
+			streamer_fetchData(stream2);
 		return 0;
 	}
 	if (!stream2) {
 		if (stream1)
-			streamer_FetchData(stream1);
+			streamer_fetchData(stream1);
 		return 0;
 	}
 
-	value = stream1->loadIndex - stream1->readIndex;
-	if (value < 0) {
-		value += stream1->bufFreeSize;
+	int size1 = stream1->loadIndex - stream1->readIndex;
+	if (size1 < 0) {
+		size1 += stream1->bufFreeSize;
 	}
-	critical1 = (value < stream1->criticalSize);
 
-	value2 = stream2->loadIndex - stream2->readIndex;
-	if (value < 0) {
-		value2 += stream2->bufFreeSize;
-		critical1 = true;
+	int size2 = stream2->loadIndex - stream2->readIndex;
+	if (size1 < 0) {
+		size2 += stream2->bufFreeSize;
 	}
-	critical2 = (value2 < stream2->criticalSize);
 
-	if (critical1) {
-		if (critical2) {
+	// Check if we've reached or surpassed criticalSize
+	int critical1 = (size1 >= stream1->criticalSize);
+	int critical2 = (size2 >= stream2->criticalSize);
+
+	if (!critical1) {
+		if (!critical2) {
 			if (stream1 == streamer_lastStreamLoaded) {
-				streamer_FetchData(stream1);
-				streamer_FetchData(stream2);
+				streamer_fetchData(stream1);
+				streamer_fetchData(stream2);
+				return 0;
+			} else {
+				streamer_fetchData(stream2);
+				streamer_fetchData(stream1);
 				return 0;
 			}
-			else {
-				streamer_FetchData(stream2);
-				streamer_FetchData(stream1);
-				return 0;
-			}
-		}
-		else {
-			if (stream2 == streamer_lastStreamLoaded)
-				streamer_FetchData(stream2);
-			else
-				streamer_FetchData(stream1);
+		} else {
+			streamer_fetchData(stream1);
 			return 0;
 		}
 	}
-	if (critical2) {
-		streamer_FetchData(stream2);
+
+	if (!critical2) {
+		streamer_fetchData(stream2);
 		return 0;
-	}
-	else {
+	} else {
 		if (stream1 == streamer_lastStreamLoaded)
-			streamer_FetchData(stream1);
+			streamer_fetchData(stream1);
 		else
-			streamer_FetchData(stream2);
+			streamer_fetchData(stream2);
 		return 0;
 	}
 }
 
-int streamer_reAllocReadBuffer(void *streamPtr, int32 size) {
-	value = streamPtr->loadIndex - streamPtr->readIndex;
-	if (value < 0)
-		value += streamPtr->bufFreeSize;
-	if (value < size || streamPtr->maxRead < value)
+// Validated
+int streamer_reAllocReadBuffer(iMUSEStreams *streamPtr, unsigned int reallocSize) {
+	int size = streamPtr->loadIndex - streamPtr->readIndex;
+
+	if (size < 0)
+		size += streamPtr->bufFreeSize;
+	if (size < reallocSize || streamPtr->maxRead < reallocSize)
 		return 0;
-	value = streamPtr->bufFreeSize - streamPtr->readIndex;
-	if (value >= size) {
-		memcpy(streamPtr->buf + streamPtr->bufFreeSize, streamPtr->buf, size - streamPtr->bufFreeSize + streamPtr->readIndex + 4);
+
+	if (streamPtr->bufFreeSize - streamPtr->readIndex < reallocSize) {
+		memcpy(streamPtr->buf + streamPtr->bufFreeSize, streamPtr->buf, reallocSize - streamPtr->bufFreeSize + streamPtr->readIndex + 4);
 	}
 
-	readIndex = streamPtr->readIndex;
-	ptr = streamPtr->buf + streamPtr->readIndex;
-	streamPtr->readIndex = readindex + size;
-	if (streamPtr->bufFreeSize <= streamPtr->readIndex + size)
-		streamPtr->readIndex = readindex + size - streamPtr->bufFreeSize;
+	int readIndex_tmp = streamPtr->readIndex;
+	int ptr = streamPtr->buf + streamPtr->readIndex;
+	streamPtr->readIndex += reallocSize;
+	if (streamPtr->bufFreeSize <= readIndex_tmp + reallocSize)
+		streamPtr->readIndex = readIndex_tmp + reallocSize - streamPtr->bufFreeSize;
+	
 	return ptr;
 }
 
-int streamer_copyBuffer_Absolute(void *streamPtr, int32 offset, int32 size) {
-	value = streamPtr->loadIndex - streamPtr->readIndex;
+// Validated
+int streamer_copyBufferAbsolute(iMUSEStreams *streamPtr, int offset, int size) {
+	int value = streamPtr->loadIndex - streamPtr->readIndex;
 	if (value < 0)
 		value += streamPtr->bufFreeSize;
-	if (param1 + param2 > value || streamPtr->maxRead < size)
+	if (offset + size > value || streamPtr->maxRead < size)
 		return 0;
-	value = param1 + streamPtr->readIndex;
-	if (param1 + streamPtr->readIndex >= streamPtr->bufFreeSize) {
-		value -= streamPtr->bufFreeSize;
+	int offsetReadIndex = offset + streamPtr->readIndex;
+	if (offset + streamPtr->readIndex >= streamPtr->bufFreeSize) {
+		offsetReadIndex -= streamPtr->bufFreeSize;
 	}
 
-	value2 = streamPtr->bufFreeSize - value;
-	if (value2 < param2) {
-		memcpy(streamPtr->buf + streamPtr->bufFreeSize, streamPtr->buf, param2 + value - streamPtr->bufFreeSize);
+	if (streamPtr->bufFreeSize - offsetReadIndex < size) {
+		memcpy(streamPtr->buf + streamPtr->bufFreeSize, streamPtr->buf, size + offsetReadIndex - streamPtr->bufFreeSize);
 	}
 
-	return streamPtr->buf + value;
+	return streamPtr->buf + offsetReadIndex;
 }
 
-int streamer_setIndex1(void *streamPtr, int32 offset) {
+// Validated
+int streamer_setIndex1(iMUSEStreams *streamPtr, unsigned int offset) {
 	streamer_bailFlag = 1;
-	value = streamPtr->loadIndex - streamPtr->readIndex;
+	int value = streamPtr->loadIndex - streamPtr->readIndex;
 	if (value < 0)
 		value += streamPtr->bufFreeSize;
-	if (param1 > value)
+	if (offset > value)
 		return -1;
-	value = streamPtr->readIndex + offset;
-	streamPtr->readIndex = value;
-	if (streamPtr->bufFreeSize <= value) {
-		streamPtr->readIndex = value - streamPtr->bufFreeSize;
+	int offsetReadIndex = streamPtr->readIndex + offset;
+	streamPtr->readIndex = offsetReadIndex;
+	if (streamPtr->bufFreeSize <= offsetReadIndex) {
+		streamPtr->readIndex = offsetReadIndex - streamPtr->bufFreeSize;
 	}
 	return 0;
 }
 
-int streamer_setIndex2(void *streamPtr, int32 offset) {
+// Validated
+int streamer_setIndex2(iMUSEStreams *streamPtr, unsigned int offset) {
 	streamer_bailFlag = 1;
-	value = streamPtr->loadIndex - streamPtr->readIndex;
+	int value = streamPtr->loadIndex - streamPtr->readIndex;
 	if (value < 0)
-		value += streamPtr->bufSizeLeft;
-	if (value < param1)
+		value += streamPtr->bufFreeSize;
+	if (value < offset)
 		return -1;
-	value = streamPtr->readIndex + offset;
-	streamPtr->loadIndex = value;
-	if (value >= streamPtr->bufFreeSize) {
-		streamPtr->loadIndex = value - streamPtr->bufSizeLeft;
+	int offsetReadIndex = streamPtr->readIndex + offset;
+	streamPtr->loadIndex = offsetReadIndex;
+	if (offsetReadIndex >= streamPtr->bufFreeSize) {
+		streamPtr->loadIndex = offsetReadIndex - streamPtr->bufFreeSize;
 	}
 	return 0;
 }
 
-int streamer_getFreeBuffer(void *streamPtr) {
-	value = streamPtr->loadIndex - streamPtr->readIndex;
-	if (value < 0)
-		value += streamPtr->bufFreeSize;
-	return value;
+// Validated
+int streamer_getFreeBuffer(iMUSEStreams *streamPtr) {
+	int freeBufferSize = streamPtr->loadIndex - streamPtr->readIndex;
+	if (freeBufferSize < 0)
+		freeBufferSize += streamPtr->bufFreeSize;
+	return freeBufferSize;
 }
 
-int streamer_setSoundToStreamWithCurrentOffset(void *streamPtr, int soundID, int32 currentOffset) {
+// Validated
+int streamer_setSoundToStreamWithCurrentOffset(iMUSEStreams *streamPtr, int soundId, int currentOffset) {
 	streamer_bailFlag = 1;
 	streamPtr->soundId = soundId;
 	streamPtr->curOffset = currentOffset;
@@ -221,114 +232,133 @@ int streamer_setSoundToStreamWithCurrentOffset(void *streamPtr, int soundID, int
 	return 0;
 }
 
-int streamer_queryStream(void *streamPtr, int *bufSize, int *sampleRate, int *freeSpace, bool *paused) {
+// Validated
+int streamer_queryStream(iMUSEStreams *streamPtr, int *bufSize, int *criticalSize, int *freeSpace, int *paused) {
 	dispatch_predictFirstStream();
-	*(int *)(bufSize) = streamPtr->bufFreeSize;
-	*(int *)(criticalSize) = streamPtr->criticalSize;
-	value = streamPtr->loadIndex - streamPtr->readIndex;
+	*bufSize = streamPtr->bufFreeSize;
+	*criticalSize = streamPtr->criticalSize;
+	int value = streamPtr->loadIndex - streamPtr->readIndex;
 	if (value < 0)
 		value += streamPtr->bufFreeSize;
-	*(int *)(freeSpace) = freeSpace;
-	*(int *)(paused) = streamPtr->paused;
+	*freeSpace = value;
+	*paused = streamPtr->paused;
 	return 0;
 }
 
-int streamer_feedStream(void *streamPtr, void *src, int32 size, int paused) {
-	value = streamPtr->loadIndex - streamPtr->readIndex;
-	if (value <= 0)
-		value += streamPtr->bufFreeSize;
-	value -= 4;
-	if (size > value) {
-		printf("FeedStream() buffer overflow...");
+// Validated
+int streamer_feedStream(iMUSEStreams *streamPtr, int *srcBuf, unsigned int sizeToFeed, int paused) {
+	int size = streamPtr->loadIndex - streamPtr->readIndex;
+	if (size <= 0)
+		size += streamPtr->bufFreeSize;
+
+	if (sizeToFeed > size - 4) {
+		printf("ERR: FeedStream() buffer overflow...");
 		streamer_bailFlag = 1;
-		value2 = size - value;
-		value2 -= value2 % 12 + 12;
-		value = streamPtr->loadIndex - streamPtr->readIndex;
-		if (value < 0)
-			value += streamPtr->bufFreeSize;
-		if (value >= value2) {
-			streamPtr->readIndex = value2 + streamPtr->bufFreeSize;
+
+		int newTentativeSize = sizeToFeed - size - 4;
+		newTentativeSize -= newTentativeSize % 12 + 12;
+		size = streamPtr->loadIndex - streamPtr->readIndex;
+		if (size < 0)
+			size += streamPtr->bufFreeSize;
+		if (size >= newTentativeSize) {
+			streamPtr->readIndex = newTentativeSize + streamPtr->bufFreeSize;
 			if (streamPtr->bufFreeSize <= streamPtr->readIndex)
 				streamPtr->readIndex -= streamPtr->bufFreeSize;
 		}
 	}
-	while (size > 0) {
-		loadIndex = streamPtr->loadIndex;
-		value = streamPtr->bufFreeSize - streamPtr->loadIndex;
-		if (value >= size) {
-			value = size;
+	while (sizeToFeed > 0) {
+		int loadIndex = streamPtr->loadIndex;
+		size = streamPtr->bufFreeSize - streamPtr->loadIndex;
+		if (size >= sizeToFeed) {
+			size = sizeToFeed;
 		}
-		size -= value;
-		memcpy(streamPtr->buf + streamPtr->loadIndex, src, value);
-		src += value;
-		val = value + streamPtr->loadIndex;
-		streamPtr->curOffset += value;
-		streamPtr->loadIndex += value;
+		sizeToFeed -= size;
+		memcpy(streamPtr->buf + streamPtr->loadIndex, srcBuf, size);
+		srcBuf += size;
+
+		int val = size + streamPtr->loadIndex;
+		streamPtr->curOffset += size;
+		streamPtr->loadIndex += size;
 		if (val >= streamPtr->bufFreeSize) {
 			streamPtr->loadIndex = val - streamPtr->bufFreeSize;
 		}
-	} while (size > 0);
+	} while (sizeToFeed > 0);
 
 	streamPtr->paused = paused;
 	return 0;
 }
 
-int streamer_fetchData(void *streamPtr) {
-	if (!streamPtr->endOffset) {
+// Validated
+int streamer_fetchData(iMUSEStreams *streamPtr) {
+	if (streamPtr->endOffset == 0) {
 		streamPtr->endOffset = files_Seek(streamPtr->soundId, 0, SEEK_END);
 	}
-	value = streamPtr->loadIndex - streamPtr->readIndex;
-	if (value <= 0)
-		value += streamPtr->bufFreeSize;
-	value -= 4;
-	value2 = streamPtr->loadSize;
-	value3 = streamPtr->endOffset - streamPtr->curOffset;
-	if (value2 >= value) {
-		value2 = value;
+
+	int size = streamPtr->loadIndex - streamPtr->readIndex;
+	if (size <= 0)
+		size += streamPtr->bufFreeSize;
+
+	int loadSize = streamPtr->loadSize;
+	int remainingSize = streamPtr->endOffset - streamPtr->curOffset;
+	
+	if (loadSize >= size - 4) {
+		loadSize = size - 4;
 	}
-	if (value2 >= value3) {
-		value2 = value3;
+
+	if (loadSize >= remainingSize) {
+		loadSize = remainingSize;
 	}
-	if (value3 <= 0) {
+
+	if (remainingSize <= 0) {
 		streamPtr->paused = 1;
-		*(byte *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+
+		// Pad the buffer
+		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
 		streamPtr->loadIndex++;
-		*(byte *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
 		streamPtr->loadIndex++;
-		*(byte *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
 		streamPtr->loadIndex++;
-		*(byte *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
 		streamPtr->loadIndex++;
 	}
+
+	int actualAmount;
+	int requestedAmount;
+
 	do {
-		if (value2 <= 0)
+		if (loadSize <= 0)
 			return 0;
-		value4 = streamPtr->bufFreeSize - streamPtr->loadIndex;
-		if (value4 >= value2) {
-			value4 = value2;
+
+		requestedAmount = streamPtr->bufFreeSize - streamPtr->loadIndex;
+		if (requestedAmount >= loadSize) {
+			requestedAmount = loadSize;
 		}
-		if (files_Seek(streamPtr->soundId, streamPtr->curOffset, SEEK_SET) != streamPtr->curOffset) {
-			warning("Invalid seek in streamer...");
+
+		if (files_seek(streamPtr->soundId, streamPtr->curOffset, SEEK_SET) != streamPtr->curOffset) {
+			warning("ERR: Invalid seek in streamer...");
 			streamPtr->paused = 1;
 			return 0;
 		}
+
 		streamer_bailFlag = 0;
 		waveapi_decreaseSlice();
-		result = files_Read(streamPtr->soundId, streamPtr->buf + streamPtr->loadIndex, value4);
-		if (streamer_bailFlag)
+		actualAmount = files_read(streamPtr->soundId, streamPtr->buf + streamPtr->loadIndex, requestedAmount);
+		waveapi_decreaseSlice();
+		if (streamer_bailFlag != 0)
 			return 0;
-		value2 -= result;
-		streamPtr->curOffset += result;
-		streamer_lastStreamLoaded = streamPtr;
-		freeSize = streamPtr->bufFreeSize;
-		value5 = result + loadIndex;
-		streamPtr->loadIndex += result;
-		if (value5 >= streamPtr->bufFreeSize) {
-			streamPtr->loadIndex = value5 - freeSize;
-		}
-	} while (result == value4);
 
-	printf("unable to load correct amount data");
+		loadSize -= actualAmount;
+		streamPtr->curOffset += actualAmount;
+		streamer_lastStreamLoaded = streamPtr;
+
+		streamPtr->loadIndex += actualAmount;
+		if (streamPtr->loadIndex + actualAmount >= streamPtr->bufFreeSize) {
+			streamPtr->loadIndex = streamPtr->loadIndex + actualAmount - streamPtr->bufFreeSize;
+		}
+	} while (actualAmount == requestedAmount);
+
+	printf("ERR: unable to load correct amount (req=%lu,act=%lu)...", requestedAmount, actualAmount);
 	streamer_lastStreamLoaded = NULL;
 	return 0;
 }

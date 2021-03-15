@@ -84,6 +84,7 @@ int waveapi_moduleInit(int sampleRate, waveOutParams *waveoutParamStruct) {
 }
 
 // Validated
+// TODO: check comment
 void waveapi_write(LPSTR *lpData, int *feedSize, int *sampleRate) {
 	if (waveapi_disableWrite)
 		return;
@@ -92,7 +93,7 @@ void waveapi_write(LPSTR *lpData, int *feedSize, int *sampleRate) {
 	waveapi_xorTrigger ^= 1; // Only in The DIG
 	if (!waveapi_xorTrigger) // Only in The DIG
 		return;
-	feedSize = 0;
+	*feedSize = 0;
 	LPWAVEHDR headerToUse = waveHeaders[waveapi_writeIndex];
 	if ((headerToUse->dwFlags & 1) == (headerToUse->lpData))
 		return;

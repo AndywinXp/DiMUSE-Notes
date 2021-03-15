@@ -23,8 +23,8 @@ int wave_getHook(int soundId);
 int wave_startSoundInGroup(int soundId, int priority, int groupId);
 int wave_switchStream(int oldSoundId, int newSoundId, int fadeLengthMs, int fadeSyncFlag2, int fadeSyncFlag1);
 int wave_processStreams();
-int wave_queryStream(int soundId, int sampleRate, int param3, int param4, char param5);
-int wave_feedStream(int soundId, int param2, int param3, int param4);
+int wave_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSpace, int *paused);
+int wave_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused);
 int wave_lipSync(int soundId, int syncId, int msPos, int *width, int *height);
 
 #endif 

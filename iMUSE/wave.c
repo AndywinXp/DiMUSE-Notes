@@ -167,10 +167,9 @@ int wave_processStreams() {
 }
 
 // Validated
-// TODO: rename and retype args
-int wave_queryStream(int soundId, int sampleRate, int param3, int param4, char param5) {
+int wave_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSpace, int *paused) {
 	wvSlicingHalted++;
-	int result = tracks_queryStream(soundId, sampleRate, param3, param4, param5);
+	int result = tracks_queryStream(soundId, bufSize, criticalSize, freeSpace, paused);
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}
@@ -178,10 +177,9 @@ int wave_queryStream(int soundId, int sampleRate, int param3, int param4, char p
 }
 
 // Validated
-// TODO: rename and retype args
-int wave_feedStream(int soundId, int param2, int param3, int param4) {
+int wave_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 	wvSlicingHalted++;
-	int result = tracks_feedStream(soundId, param2, param3, param4);
+	int result = tracks_feedStream(soundId, srcBuf, sizeToFeed, paused);
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}

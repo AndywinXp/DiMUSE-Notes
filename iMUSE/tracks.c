@@ -320,7 +320,7 @@ int tracks_getNextSound(int soundId) {
 	return found_soundId;
 }
 
-int tracks_queryStream(int soundId, int sampleRate, int param2, int param3, int paused) {
+int tracks_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSpace, int *paused) {
 	if (!tracks_trackList)
 		return -1;
 
@@ -328,7 +328,7 @@ int tracks_queryStream(int soundId, int sampleRate, int param2, int param3, int 
 	do {
 		if (track->soundId) {
 			if (track->soundId == soundId && track->dispatchPtr->streamPtr) {
-				streamer_queryStream(track->dispatchPtr->streamPtr, sampleRate, param2, param3, paused);
+				streamer_queryStream(track->dispatchPtr->streamPtr, bufSize, criticalSize, freeSpace, paused);
 				return 0;
 			}
 		}
@@ -337,14 +337,14 @@ int tracks_queryStream(int soundId, int sampleRate, int param2, int param3, int 
 	return -1;
 }
 
-int tracks_feedStream(int soundId, int param1, int param2, int param3) {
+int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 	if (!tracks_trackList)
 		return -1;
 	iMUSETracks *track = *(iMUSETracks**)tracks_trackList;
 	do {
 		if (track->soundId != 0) {
 			if (track->soundId == soundId && track->dispatchPtr->streamPtr) {
-				streamer_feedStream(track->dispatchPtr->streamPtr, param1, param2, param3);
+				streamer_feedStream(track->dispatchPtr->streamPtr, srcBuf, sizeToFeed, paused);
 				return 0;
 			}
 		}
