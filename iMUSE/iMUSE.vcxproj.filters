@@ -51,6 +51,9 @@
     <ClCompile Include="dispatch.c">
       <Filter>File di origine</Filter>
     </ClCompile>
+    <ClCompile Include="imuseutils.c">
+      <Filter>File di origine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands.h">
@@ -87,6 +90,9 @@
       <Filter>File di intestazione</Filter>
     </ClInclude>
     <ClInclude Include="waveapi.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="imuseutils.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

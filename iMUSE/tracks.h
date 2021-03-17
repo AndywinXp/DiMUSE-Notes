@@ -1,10 +1,11 @@
 #ifndef DIGITAL_IMUSE_TRACKS
 #define DIGITAL_IMUSE_TRACKS
 #include "dispatch.h"
+#include <stdio.h>
+
 #define MAX_TRACKS 8
 
-typedef struct 
-{
+typedef struct {
 	int prev;
 	int next;
 	iMUSEDispatch *dispatchPtr;
@@ -24,11 +25,11 @@ typedef struct
 
 iMUSETracks tracks[MAX_TRACKS];
 iMUSEInitData * tracks_initDataPtr;
+iMUSETracks *tracks_trackList = NULL;
 
 int tracks_trackCount;
 int (*tracks_waveCall)();
 int tracks_pauseTimer;
-char *tracks_trackList;
 int tracks_prefSampleRate;
 int tracks_running40HzCount;
 int tracks_uSecsToFeed;

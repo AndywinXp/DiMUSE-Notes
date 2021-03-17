@@ -44,6 +44,6 @@ int (*iMUSE_FuncList[31])() = { cmds_init,             cmds_terminate,         c
 	 						    cmds_stopAllSounds,    cmds_getNextSound,      cmds_setParam,          cmds_getParam,         fades_fadeParam,
 								cmds_setHook,          cmds_getHook,           triggers_setTrigger,    triggers_checkTrigger, triggers_clearTrigger,
 							    triggers_deferCommand, 0,                      0,                      0,                     0,
-							    wave_startStream,      wave_switchStream,      wave_processStreams,    wave_queryStream,      wave_feedStream,
+							    wave_startSound,       wave_switchStream,      wave_processStreams,    wave_queryStream,      wave_feedStream,
 								wave_lipSync };
 #endif

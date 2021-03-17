@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{6644B9E2-151E-4FC6-9B53-3423ABD28859}</ProjectGuid>
-    <RootNamespace>iMUSE</RootNamespace>
+    <ProjectGuid>{C9D61EB9-E62E-474D-9309-78595AE846B7}</ProjectGuid>
+    <RootNamespace>Sandbox</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,7 +70,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -78,7 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -115,34 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="commands.c" />
-    <ClCompile Include="Digital_iMUSE.c" />
-    <ClCompile Include="dispatch.c" />
-    <ClCompile Include="fades.c" />
-    <ClCompile Include="files.c" />
-    <ClCompile Include="groups.c" />
-    <ClCompile Include="imuseutils.c" />
-    <ClCompile Include="streamer.c" />
-    <ClCompile Include="waveapi.c" />
-    <ClCompile Include="timer.c" />
-    <ClCompile Include="tracks.c" />
-    <ClCompile Include="triggers.c" />
-    <ClCompile Include="wave.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="commands.h" />
-    <ClInclude Include="dispatch.h" />
-    <ClInclude Include="fades.h" />
-    <ClInclude Include="files.h" />
-    <ClInclude Include="groups.h" />
-    <ClInclude Include="imuse.h" />
-    <ClInclude Include="imuseutils.h" />
-    <ClInclude Include="streamer.h" />
-    <ClInclude Include="timer.h" />
-    <ClInclude Include="tracks.h" />
-    <ClInclude Include="triggers.h" />
-    <ClInclude Include="wave.h" />
-    <ClInclude Include="waveapi.h" />
+    <ClCompile Include="main.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -26,7 +26,7 @@ typedef struct
 	int (*waveCall)(); // IMUSE_nullsub_minus1 (returns -1)
 	int field_38;
 	int unused;
-	int use11025HzSampleRate; // Formerly field_40; fixed at 0 (at least for The Dig)
+	int halfSampleRateFlag; // Formerly field_40; fixed at 0 (at least for The Dig)
 	int waveMixCount; // Fixed at 6
 	int (*field_48)(); // Function related to SOU engine
 	int (*seekFunc)();
