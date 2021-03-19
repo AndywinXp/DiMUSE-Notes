@@ -1,9 +1,9 @@
 #include "imuseutils.h"
 
-int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
-{
+// Validated
+int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item) {
 	if (!listPtr_Item || listPtr_Item->prev || listPtr_Item->next) {
-		printf("ERR: list arg err when adding...");
+		printf("ERR: list arg err when adding...\n");
 		return -5;
 	} else {
 		// Set item's next element to the list
@@ -27,8 +27,8 @@ int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
 	return 0;
 }
 
-int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr)
-{
+// Validated
+int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 	iMUSETracks *track = *listPtr;
 	if (itemPtr && track) {
 		do {
@@ -47,24 +47,64 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr)
 			if (prev_track) {
 				prev_track->next = next_track;
 			} else {
-				listPtr = next_track;
+				*listPtr = next_track;
 			}
 
 			itemPtr->next = NULL;
 			itemPtr->prev = NULL;
 			return 0;
 		} else {
-			printf("ERR: item not on list...");
+			printf("ERR: item not on list...\n");
 			return -3;
 		}
-	}
-	else {
-		printf("ERR: list arg err when removing...");
+	} else {
+		printf("ERR: list arg err when removing...\n");
 		return -5;
 	}
 }
 
-int iMUSE_SWAP32(unsigned __int8 *value)
-{
+// Validated
+int iMUSE_clampNumber(int value, int minValue, int maxValue) {
+	if (value < minValue)
+		return minValue;
+
+	if (value > maxValue)
+		return maxValue;
+
+	return value;
+}
+
+// Validated
+int iMUSE_clampTuning(int value, int minValue, int maxValue) {
+	if (minValue > value) {
+		value += (12 * ((minValue - value) + 11) / 12);
+	}
+
+	if (maxValue < value) {
+		value -= (12 * ((value - maxValue) + 11) / 12);
+	}
+
+	return value;
+}
+
+// Validated
+int iMUSE_SWAP32(unsigned __int8 *value) {
 	return value[3] | ((value[2] | ((value[1] | (*value << 8)) << 8)) << 8);
+}
+
+// Validated
+int iMUSE_checkHookId(int *trackHookId, int sampleHookId) {
+	if (sampleHookId) {
+		if (*trackHookId == sampleHookId) {
+			*trackHookId = 0;
+			return 0;
+		} else {
+			return -1;
+		}
+	} else if (*trackHookId == 128) {
+		*trackHookId = 0;
+		return -1;
+	} else {
+		return 0;
+	}
 }

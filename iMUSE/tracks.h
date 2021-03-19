@@ -1,16 +1,17 @@
 #ifndef DIGITAL_IMUSE_TRACKS
 #define DIGITAL_IMUSE_TRACKS
 #include "dispatch.h"
+#include "imuseutils.h"
 #include <stdio.h>
 
 #define MAX_TRACKS 8
 
-typedef struct {
-	int prev;
-	int next;
+typedef struct iMUSETracks_node {
+	struct iMUSETracks_node *prev;
+	struct iMUSETracks_node *next;
 	iMUSEDispatch *dispatchPtr;
 	int soundId;
-	int marker;
+	int *marker;
 	int group;
 	int priority;
 	int vol;
@@ -25,7 +26,7 @@ typedef struct {
 
 iMUSETracks tracks[MAX_TRACKS];
 iMUSEInitData * tracks_initDataPtr;
-iMUSETracks *tracks_trackList = NULL;
+struct iMUSETracks *tracks_trackList;
 
 int tracks_trackCount;
 int (*tracks_waveCall)();
@@ -54,8 +55,7 @@ int tracks_lipSync(int soundId, int syncId, int msPos, int *width, char *height)
 int tracks_setHook(int soundId, int hookId);
 int tracks_getHook(int soundId);
 void tracks_free();
-int tracks_setPriority(int priorirty, int minPriority, int maxPriority);
-int tracks_detune(int detune, int minDetune, int maxDetune);
+
 int tracks_debug();
 
 #endif

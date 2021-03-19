@@ -19,13 +19,13 @@ typedef struct iMUSETracks_node {
 	int jumpHook;
 } iMUSETracks;
 
-iMUSETracks *tracks_trackList = NULL;
+struct iMUSETracks *tracks_trackList;
 iMUSETracks tracks[8];
 
 int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
 {
 	if (!listPtr_Item || listPtr_Item->prev || listPtr_Item->next) {
-		printf("ERR: list arg err when adding...");
+		printf("ERR: list arg err when adding...\n");
 		return -5;
 	} else {
 		// Set item's next element to the list
@@ -49,8 +49,7 @@ int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
 	return 0;
 }
 
-int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr)
-{
+int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 	iMUSETracks *track = *listPtr;
 	if (itemPtr && track) {
 		do {
@@ -62,24 +61,28 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr)
 		if (track) {
 			iMUSETracks *next_track = itemPtr->next;
 			iMUSETracks *prev_track = itemPtr->prev;
+
 			if (next_track)
 				next_track->prev = prev_track;
 
 			if (prev_track) {
 				prev_track->next = next_track;
 			} else {
-				listPtr = next_track;
+				*listPtr = next_track;
 			}
 
 			itemPtr->next = NULL;
 			itemPtr->prev = NULL;
+
 			return 0;
-		} else {
-			printf("ERR: item not on list...");
+		}
+		else {
+			printf("ERR: item not on list...\n");
 			return -3;
 		}
-	} else {
-		printf("ERR: list arg err when removing...");
+	}
+	else {
+		printf("ERR: list arg err when removing...\n");
 		return -5;
 	}
 }
@@ -149,7 +152,10 @@ int main() {
 	iMUSE_addItemToList(&tracks_trackList, &find_track3);
 
 	iMUSE_removeItemFromList(&tracks_trackList, &find_track4);
-
+	iMUSE_removeItemFromList(&tracks_trackList, &find_track2);
+	iMUSE_removeItemFromList(&tracks_trackList, &find_track);
+	iMUSE_removeItemFromList(&tracks_trackList, &find_track3);
+	iMUSE_removeItemFromList(&tracks_trackList, &find_track3);
 	iMUSETracks *track = tracks_trackList;
 	while (track) {
 		printf("soundID: %d\n", track->soundId);

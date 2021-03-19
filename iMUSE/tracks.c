@@ -16,11 +16,13 @@ int tracks_moduleInit(iMUSEInitData *initDataPtr) {
 		warning("TR: waveMixCount NULL or too big, defaulting to 4...");
 		tracks_initDataPtr->waveMixCount = 4;
 	}
+
 	tracks_trackCount = tracks_initDataPtr->waveMixCount;
 	tracks_waveCall = tracks_initDataPtr->waveCall; // This is just a function which returns -1
 	tracks_pauseTimer = 0;
 	tracks_trackList = NULL;
 	tracks_prefSampleRate = 22050;
+
 	if (tracks_waveCall) {
 		if (waveapi_moduleInit(initDataPtr->unused, 22050, &waveapi_waveOutParams))
 			return -1;
@@ -32,19 +34,18 @@ int tracks_moduleInit(iMUSEInitData *initDataPtr) {
 		waveapi_waveOutParams.bytesPerSample = 8;
 		waveapi_waveOutParams.numChannels = 1;
 	}
-	if (mixer_moduleInit(initDataPtr, &waveapi_waveOutParams))
+
+	if (mixer_moduleInit(initDataPtr, &waveapi_waveOutParams) || dispatch_moduleInit(initDataPtr) || streamer_moduleInit())
 		return -1;
-	if (dispatch_moduleInit(initDataPtr))
-		return -1;
-	if (streamer_moduleInit())
-		return -1;
+
 	for (int l = 0; l < tracks_trackCount; l++) {
 		tracks[l].prev = NULL;
 		tracks[l].next = NULL;
 		tracks[l].dispatchPtr = dispatch_getDispatchByID(l);
-		tracks[l].dispatchPtr->trackPtr = tracks[l];
+		tracks[l].dispatchPtr->trackPtr = &tracks[l];
 		tracks[l].soundId = 0;
 	}
+
 	return 0;
 }
 
@@ -87,29 +88,28 @@ int tracks_restore(int *buffer) {
 			tracks[l].prev = NULL;
 			tracks[l].next = NULL;
 			tracks[l].dispatchPtr = dispatch_getDispatchByTrackID(l);
-			tracks[l].dispatchPtr->trackPtr = tracks[l];
+			tracks[l].dispatchPtr->trackPtr = &tracks[l];
 			if (tracks[l].soundId) {
 				iMUSE_addItemToList(&tracks_trackList, &tracks[l]);
 			}
 		}
 	}
+
 	dispatch_allocStreamZones();
 	waveapi_decreaseSlice();
+
 	return result + 480;
 }
 
 // Validated
-// ...I think?
 void tracks_setGroupVol() {
-	iMUSETracks* curTrack = *(iMUSETracks**) tracks_trackList;
+	iMUSETracks* curTrack = tracks_trackList;
 	int tmp;
 
-	if (*(int*) tracks_trackList != NULL) {
-		do {
-			curTrack->effVol = (groups_getGroupVol(curTrack->group) * (curTrack->vol + 1)) / 128;
-			curTrack = (iMUSETracks*) curTrack->next;
-		} while (curTrack != NULL);
-	}
+	while (curTrack) {
+		curTrack->effVol = (groups_getGroupVol(curTrack->group) * (curTrack->vol + 1)) / 128;
+		curTrack = curTrack->next;
+	};
 	
 	return 0;
 }
@@ -157,16 +157,15 @@ void tracks_callback() {
 					tracks_initDataPtr->SMUSH_related_function(); 
 				}
 			}
-			iMUSETracks * track = *(iMUSETracks **) tracks_trackList;
-			if (tracks_trackList != NULL) {
-				
-				do {
-					iMUSETracks * next = track->next;
-					dispatch_processDispatches(track, iMUSE_feedSize, iMUSE_sampleRate);
-					track = next;
-				} while (track);
-			}
+			iMUSETracks *track = tracks_trackList;
+
+			while (track) {
+				iMUSETracks *next = track->next;
+				dispatch_processDispatches(track, iMUSE_feedSize, iMUSE_sampleRate);
+				track = next;
+			};
 		}
+
 		if (tracks_waveCall) {
 			mixer_loop(iMUSE_waveHeader, iMUSE_feedSize);
 			if (tracks_waveCall) {
@@ -174,12 +173,13 @@ void tracks_callback() {
 			}
 		}
 	}
+
 	waveapi_decreaseSlice();
 }
 
 // Mess with pointers and stuff
 int tracks_startSound(int soundId, int tryPriority, int unused) {
-	int priority = tracks_setPriority(tryPriority, 0, 127);
+	int priority = iMUSE_clampNumber(tryPriority, 0, 127);
 	if (tracks_trackCount > 0) {
 		int l = 0;
 		while (tracks[l].soundId == 0) {
@@ -188,39 +188,40 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 				break;
 		}
 
-		iMUSETracks find_track = tracks[l];
-		if (&find_track == NULL)
+		iMUSETracks *find_track = &tracks[l];
+		if (!find_track)
 			return -6;
 
-		find_track.soundId = soundId;
-		find_track.marker = NULL;
-		find_track.group = 0;
-		find_track.priority = priority;
-		find_track.vol = 127;
-		find_track.effVol = groups_getGroupVol(0);
-		find_track.pan = 64;
-		find_track.detune = 0;
-		find_track.transpose = 0;
-		find_track.pitchShift = 0;
-		find_track.mailbox = 0;
-		find_track.jumpHook = 0;
+		find_track->soundId = soundId;
+		find_track->marker = NULL;
+		find_track->group = 0;
+		find_track->priority = priority;
+		find_track->vol = 127;
+		find_track->effVol = groups_getGroupVol(0);
+		find_track->pan = 64;
+		find_track->detune = 0;
+		find_track->transpose = 0;
+		find_track->pitchShift = 0;
+		find_track->mailbox = 0;
+		find_track->jumpHook = 0;
 
-		if (dispatch_alloc(&find_track, find_track.priority)) {
-			printf("dispatch couldn't start sound...");
-			find_track.soundId = 0;
+		if (dispatch_alloc(&find_track, find_track->priority)) {
+			printf("ERR: dispatch couldn't start sound...\n");
+			find_track->soundId = 0;
 			return -1;
 		}
 		waveapi_increaseSlice();
-		iMUSE_addItemToList(tracks_trackList, &find_track);
+		iMUSE_addItemToList(&tracks_trackList, &find_track);
 		waveapi_decreaseSlice();
 		return 0;
 	}
 
-	printf("ERR: no spare tracks...");
+	printf("ERR: no spare tracks...\n");
 
-	iMUSETracks * track = tracks_trackList;
+	iMUSETracks *track = tracks_trackList;
 	int best_pri = 127;
-	iMUSETracks * find_track = NULL;
+	iMUSETracks *find_track = NULL;
+
 	while (track) {
 		int pri = track->priority;
 		if (best_pri >= pri) {
@@ -240,7 +241,7 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 		find_track->soundId = 0;
 	}
 
-	if (&find_track == NULL)
+	if (!find_track)
 		return -6;
 
 	find_track->soundId = soundId;
@@ -256,14 +257,16 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 	find_track->mailbox = 0;
 	find_track->jumpHook = 0;
 
-	if (dispatch_alloc(find_track, find_track->priority)) {
-		printf("dispatch couldn't start sound...");
+	if (dispatch_alloc(&find_track, find_track->priority)) {
+		printf("ERR: dispatch couldn't start sound...\n");
 		find_track->soundId = 0;
 		return -1;
 	}
+
 	waveapi_increaseSlice();
 	iMUSE_addItemToList(&tracks_trackList, &find_track);
 	waveapi_decreaseSlice();
+
 	return 0;
 }
 
@@ -284,6 +287,7 @@ int tracks_stopSound(int soundId) {
 		result = 0;
 		track = next_track;
 	} while (track);
+
 	return result;
 }
 
@@ -301,7 +305,9 @@ int tracks_stopAllSounds() {
 		track->soundId = 0;
 		track = next_track;
 	} while (track);
+
 	waveapi_decreaseSlice();
+
 	return 0;
 }
 
@@ -334,12 +340,14 @@ int tracks_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSp
 		}
 		track = track->next;
 	} while (track);
+
 	return -1;
 }
 
 int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 	if (!tracks_trackList)
 		return -1;
+
 	iMUSETracks *track = tracks_trackList;
 	do {
 		if (track->soundId != 0) {
@@ -350,6 +358,7 @@ int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 		}
 		track = track->next;
 	} while (track);
+
 	return -1;
 }
 
@@ -364,10 +373,10 @@ void tracks_clear(iMUSETracks *trackPtr) {
 int tracks_setParam(int soundId, int opcode, int value) {
 	if (!tracks_trackList)
 		return -4;
+
 	iMUSETracks *track = tracks_trackList;
 	while (track) {
-		if (track->soundId == soundId)
-		{
+		if (track->soundId == soundId) {
 			switch (opcode) {
 			case 0x400:
 				if (value >= 16)
@@ -406,7 +415,7 @@ int tracks_setParam(int soundId, int opcode, int value) {
 				if (value == 0) {
 					track->detune = 0;
 				} else {
-					track->detune = tracks_detune(track->detune + value, -12, 12);
+					track->detune = iMUSE_clampTuning(track->detune + value, -12, 12);
 				}
 				track->pitchShift = track->effVol + track->detune * 256;
 				// end of DIG
@@ -422,14 +431,15 @@ int tracks_setParam(int soundId, int opcode, int value) {
 				track->mailbox = value;
 				return 0;
 			default:
-				warning("setParam: unknown opcode %lu", opcode);
+				printf("ERR: setParam: unknown opcode %lu\n", opcode);
 				return -5;
 			}
+
 			track = track->next;
 		}
 	}
-	return -4;
 
+	return -4;
 }
 
 int tracks_getParam(int soundId, int opcode) {
@@ -469,7 +479,7 @@ int tracks_getParam(int soundId, int opcode) {
 			case 0x1800:
 				return (track->dispatchPtr->streamPtr >= 1);
 			case 0x1900:
-				return track->dispatchPtr->stramBufID;
+				return track->dispatchPtr->streamBufID;
 			case 0x1A00:
 				if (track->dispatchPtr->wordSize == 0)
 					return 0;
@@ -486,11 +496,11 @@ int tracks_getParam(int soundId, int opcode) {
 		track = track->next;
 		l++;
 	} while (track);
+
 	if (opcode != 0x100)
 		return -4;
 	else
 		return 0;
-
 }
 /*
 int tracks_lipSync(int soundId, int syncId, int msPos, int *width, char *height) {
@@ -580,7 +590,9 @@ int tracks_setHook(int soundId, int hookId) {
 		if (!track)
 			return -4;
 	}
+
 	track->jumpHook = hookId;
+
 	return 0;
 }
 
@@ -588,79 +600,66 @@ int tracks_getHook(int soundId) {
 	if (!tracks_trackList)
 		return -4;
 
-	iMUSETracks * track = tracks_trackList;
+	iMUSETracks *track = tracks_trackList;
 	while (track->soundId == soundId) {
 		track = track->next;
 		if (!track)
 			return -4;
 	}
+
 	return track->jumpHook;
 }
 
 void tracks_free() {
 	if (!tracks_trackList)
 		return;
+
 	waveapi_increaseSlice();
-	iMUSETracks * track = tracks_trackList;
+
+	iMUSETracks *track = tracks_trackList;
 	do {
 		iMUSETracks *next_track = track->next;
 		iMUSE_removeItemFromList(&tracks_trackList, &track);
+
 		dispatch_release(track);
 		fades_clearFadeStatus(track->soundId, -1);
 		triggers_clearTrigger(track->soundId, -1, -1);
+
 		track->soundId = 0;
 		track = next_track;
 	} while (track);
+
 	waveapi_decreaseSlice();
+
 	return 0;
 }
 
 // Validated
-int tracks_setPriority(int priority, int minPriority, int maxPriority) {
-	if (priority < minPriority)
-		return minPriority;
-	if (priority > maxPriority)
-		return maxPriority;
-	return priority;
-}
-
-// Validated
-int tracks_detune(int detune, int minDetune, int maxDetune) {
-	if (minDetune > detune) {
-		detune += (12 * ((minDetune - detune) + 11) / 12);
-	}
-	if (maxDetune < detune) {
-		detune -= (12 * ((detune - maxDetune) + 11) / 12);
-	}
-	return detune;
-}
-
-// Validated
 int tracks_debug() {
-	printf("trackCount: %d", tracks_trackCount);
-	printf("waveCall: %p", tracks_waveCall);
-	printf("pauseTimer: %d", tracks_pauseTimer);
-	printf("trackList: %p", *(int *)tracks_trackList);
-	printf("prefSampleRate: %d", tracks_prefSampleRate);
-	printf("initDataPtr: %p", tracks_initDataPtr);
+	printf("trackCount: %d\n", tracks_trackCount);
+	printf("waveCall: %p\n", tracks_waveCall);
+	printf("pauseTimer: %d\n", tracks_pauseTimer);
+	printf("trackList: %p\n", *(int *)tracks_trackList);
+	printf("prefSampleRate: %d\n", tracks_prefSampleRate);
+	printf("initDataPtr: %p\n", tracks_initDataPtr);
 
 	for (int i = 0; i < MAX_TRACKS; i++) {
-		printf("trackId: %d", i);
-		printf("\tprev: %p", tracks[i].prev);
-		printf("\tnext: %p", tracks[i].next);
-		printf("\tdispatchPtr: %p", tracks[i].dispatchPtr);
-		printf("\tsound: %d", tracks[i].soundId);
-		printf("\tmarker: %d", tracks[i].marker);
-		printf("\tgroup: %d", tracks[i].group);
-		printf("\tpriority: %d", tracks[i].priority);
-		printf("\tvol: %d", tracks[i].vol);
-		printf("\teffVol: %d", tracks[i].effVol);
-		printf("\tpan: %d", tracks[i].pan);
-		printf("\tdetune: %d", tracks[i].detune);
-		printf("\ttranspose: %d", tracks[i].transpose);
-		printf("\tpitchShift: %d", tracks[i].pitchShift);
-		printf("\tmailbox: %d", tracks[i].mailbox);
-		printf("\tjumpHook: %d", tracks[i].jumpHook);
+		printf("trackId: %d\n", i);
+		printf("\tprev: %p\n", tracks[i].prev);
+		printf("\tnext: %p\n", tracks[i].next);
+		printf("\tdispatchPtr: %p\n", tracks[i].dispatchPtr);
+		printf("\tsound: %d\n", tracks[i].soundId);
+		printf("\tmarker: %d\n", tracks[i].marker);
+		printf("\tgroup: %d\n", tracks[i].group);
+		printf("\tpriority: %d\n", tracks[i].priority);
+		printf("\tvol: %d\n", tracks[i].vol);
+		printf("\teffVol: %d\n", tracks[i].effVol);
+		printf("\tpan: %d\n", tracks[i].pan);
+		printf("\tdetune: %d\n", tracks[i].detune);
+		printf("\ttranspose: %d\n", tracks[i].transpose);
+		printf("\tpitchShift: %d\n", tracks[i].pitchShift);
+		printf("\tmailbox: %d\n", tracks[i].mailbox);
+		printf("\tjumpHook: %d\n", tracks[i].jumpHook);
 	}
 
 	return 0;
