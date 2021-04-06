@@ -47,8 +47,7 @@ int waveapi_moduleInit(int sampleRate, waveOutParams *waveoutParamStruct) {
 	waveapi_waveOutParams.sizeSampleKB = 0;
 	waveapi_waveOutParams.mixBuf = waveapi_mixBuf;
 	
-	// Why is waveapi_zeroLevel there?
-	// Debugging the exe gives exactly this outcome
+	// Init the buffer at volume zero
 	memset32(waveapi_outBuf, waveapi_zeroLevel, (unsigned int) waveapi_numChannels * (unsigned int) waveapi_bytesPerSample * 9216);
 	*waveHeaders = (LPWAVEHDR) malloc(32 * sizeof(LPWAVEHDR));
 	for (int l = 0; l < NUM_HEADERS; l++) {

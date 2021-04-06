@@ -87,7 +87,7 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 	}
 }
 
-int main() {
+int maino() {
 	iMUSETracks find_track = tracks[0];
 
 	find_track.soundId = 1000;

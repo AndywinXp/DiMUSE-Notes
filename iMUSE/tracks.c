@@ -126,7 +126,7 @@ void tracks_callback() {
 	waveapi_increaseSlice();
 	dispatch_predictFirstStream();
 	if (tracks_waveCall) {
-		waveapi_write((int)&iMUSE_waveHeader, (int)&iMUSE_feedSize, iMUSE_sampleRate);
+		waveapi_write((int)&iMUSE_audioBuffer, (int)&iMUSE_feedSize, iMUSE_sampleRate);
 	} else {
 		// 40 Hz frequency for filling the audio buffer, for some reason
 		// Anyway it appears we never reach this block since tracks_waveCall is assigned to a (dummy) function
@@ -167,9 +167,9 @@ void tracks_callback() {
 		}
 
 		if (tracks_waveCall) {
-			mixer_loop(iMUSE_waveHeader, iMUSE_feedSize);
+			mixer_loop(iMUSE_audioBuffer, iMUSE_feedSize);
 			if (tracks_waveCall) {
-				waveapi_write((int)&iMUSE_waveHeader, (int)&iMUSE_feedSize, 0);
+				waveapi_write((int)&iMUSE_audioBuffer, (int)&iMUSE_feedSize, 0);
 			}
 		}
 	}
@@ -262,7 +262,7 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 	}
 
 	waveapi_increaseSlice();
-	iMUSE_addItemToList(&tracks_trackList, &stolenTrack);
+	iMUSE_addItemToList(&tracks_trackList, stolenTrack);
 	waveapi_decreaseSlice();
 
 	return 0;

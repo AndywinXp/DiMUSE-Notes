@@ -122,6 +122,7 @@
     <ClCompile Include="files.c" />
     <ClCompile Include="groups.c" />
     <ClCompile Include="imuseutils.c" />
+    <ClCompile Include="mixer.c" />
     <ClCompile Include="streamer.c" />
     <ClCompile Include="waveapi.c" />
     <ClCompile Include="timer.c" />
@@ -137,6 +138,7 @@
     <ClInclude Include="groups.h" />
     <ClInclude Include="imuse.h" />
     <ClInclude Include="imuseutils.h" />
+    <ClInclude Include="mixer.h" />
     <ClInclude Include="streamer.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="tracks.h" />

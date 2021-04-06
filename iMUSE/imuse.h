@@ -21,9 +21,9 @@ typedef struct
 	int (*SMUSH_related_function)(); // This seems to be populated and used during smush videos
 	int running12HzCount; // This appears to be the SMUSH framerate to microseconds as its calculated as 1000000 / 12
 	int num60hzIterations;
-	int(*handleCmdsFunc)(); // cmds_handleCmds
-	int field_30; // Set to 0
-	int (*waveCall)(); // IMUSE_nullsub_minus1 (returns -1)
+	int (*handleCmdsFunc)(); // cmds_handleCmds
+	int musicBundleLoaded; // Set to 0
+	int (*waveCall)(); // IMUSE_nullsub_minus1 (returns -1) (might change during execution)
 	int field_38;
 	int unused;
 	int halfSampleRateFlag; // Formerly field_40; fixed at 0 (at least for The Dig)
@@ -32,14 +32,14 @@ typedef struct
 	int (*seekFunc)();
 	int (*readFunc)();
 	int (*bufInfoFunc)(); // ihost_getSoundBuffer
-	int hWnd; // Window handle, why is it here?
-	int field_5C;
-	int field_60;
-	int field_64;
-	int field_68;
+	int hWnd; // Window handle
+	int codec_outputTempBuffer; // Used by BUN module
+	int codec_saveBuffer; // Used by BUN module
+	int compmgr_fileList; // Used by BUN module
+	int field_68; // Apparently unused
 } iMUSEInitData;
 
-int iMUSE_waveHeader;
+char *iMUSE_audioBuffer;
 int iMUSE_feedSize; // Always 1024 apparently
 int iMUSE_sampleRate;
 
