@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct iMUSETracks_node {
-	struct iMUSETracks_node *prev;
-	struct iMUSETracks_node *next;
+typedef struct iMUSETrack_node {
+	struct iMUSETrack_node *prev;
+	struct iMUSETrack_node *next;
 	int *dispatchPtr;
 	int soundId;
 	int *marker;
@@ -17,12 +17,12 @@ typedef struct iMUSETracks_node {
 	int pitchShift;
 	int mailbox;
 	int jumpHook;
-} iMUSETracks;
+} iMUSETrack;
 
-struct iMUSETracks *tracks_trackList;
-iMUSETracks tracks[8];
+struct iMUSETrack *tracks_trackList;
+iMUSETrack tracks[8];
 
-int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
+int iMUSE_addItemToList(iMUSETrack **listPtr, iMUSETrack *listPtr_Item)
 {
 	if (!listPtr_Item || listPtr_Item->prev || listPtr_Item->next) {
 		printf("ERR: list arg err when adding...\n");
@@ -49,8 +49,8 @@ int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item)
 	return 0;
 }
 
-int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
-	iMUSETracks *track = *listPtr;
+int iMUSE_removeItemFromList(iMUSETrack **listPtr, iMUSETrack *itemPtr) {
+	iMUSETrack *track = *listPtr;
 	if (itemPtr && track) {
 		do {
 			if (track == itemPtr)
@@ -59,8 +59,8 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 		} while (track);
 
 		if (track) {
-			iMUSETracks *next_track = itemPtr->next;
-			iMUSETracks *prev_track = itemPtr->prev;
+			iMUSETrack *next_track = itemPtr->next;
+			iMUSETrack *prev_track = itemPtr->prev;
 
 			if (next_track)
 				next_track->prev = prev_track;
@@ -88,7 +88,7 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 }
 
 int maino() {
-	iMUSETracks find_track = tracks[0];
+	iMUSETrack find_track = tracks[0];
 
 	find_track.soundId = 1000;
 	find_track.marker = NULL;
@@ -103,7 +103,7 @@ int maino() {
 	find_track.mailbox = 0;
 	find_track.jumpHook = 0;
 
-	iMUSETracks find_track2 = tracks[1];
+	iMUSETrack find_track2 = tracks[1];
 
 	find_track2.soundId = 2000;
 	find_track2.marker = NULL;
@@ -118,7 +118,7 @@ int maino() {
 	find_track2.mailbox = 1;
 	find_track2.jumpHook = 0;
 
-	iMUSETracks find_track3 = tracks[2];
+	iMUSETrack find_track3 = tracks[2];
 	find_track3.soundId = 3000;
 	find_track3.marker = NULL;
 	find_track3.group = 4;
@@ -132,7 +132,7 @@ int maino() {
 	find_track3.mailbox = 1;
 	find_track3.jumpHook = 0;
 
-	iMUSETracks find_track4 = tracks[3];
+	iMUSETrack find_track4 = tracks[3];
 	find_track4.soundId = 4000;
 	find_track4.marker = NULL;
 	find_track4.group = 4;
@@ -156,7 +156,7 @@ int maino() {
 	iMUSE_removeItemFromList(&tracks_trackList, &find_track);
 	iMUSE_removeItemFromList(&tracks_trackList, &find_track3);
 	iMUSE_removeItemFromList(&tracks_trackList, &find_track3);
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	while (track) {
 		printf("soundID: %d\n", track->soundId);
 		track = track->next;

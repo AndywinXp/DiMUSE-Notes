@@ -51,20 +51,15 @@ int groups_getGroupVol(int id) {
 }
 
 // Validated
-// Not sure this is what the original debug function does, 
-// but it's good enough for our purpose
-int groups_moduleDebug()
-{
+int groups_moduleDebug() {
 	printf("iMUSE:source:groups.c:groupVols[]: \n");
-	for (int i = 0; i < MAX_GROUPS; i++)
-	{
+	for (int i = 0; i < MAX_GROUPS; i++) {
 		printf("\t%d: %d\n", i, groupVols[i]);
 	}
 	printf("\n");
 
 	printf("iMUSE:source:groups.c:groupEffVols[]");
-	for (int i = 0; i < MAX_GROUPS; i++)
-	{
+	for (int i = 0; i < MAX_GROUPS; i++) {
 		printf("\t%d: %d\n", i, groupEffVols[i]);
 	}
 	printf("\n");

@@ -1,12 +1,7 @@
 #ifndef DIGITAL_IMUSE_MIXER
 #define DIGITAL_IMUSE_MIXER
 
-// Remove this junk when porting to ScummVM
-
-typedef          char   int8;
-typedef unsigned char   uint8;
-typedef          short  int16;
-typedef unsigned short  uint16;
+#include "imuse.h"
 
 iMUSEInitData *mixer_initDataPtr;
 int *mixer_amp8Table;

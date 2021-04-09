@@ -1,13 +1,7 @@
-#include "commands.h"
-#include "fades.h"
 #include "triggers.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
 
 // Validated
-int triggers_moduleInit(iMUSEInitData * initDataPtr)
-{
+int triggers_moduleInit(iMUSEInitData *initDataPtr) {
 	triggers_initDataPtr = initDataPtr;
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		trigs[l].sound = 0;
@@ -19,8 +13,7 @@ int triggers_moduleInit(iMUSEInitData * initDataPtr)
 }
 
 // Validated
-int triggers_clear()
-{
+int triggers_clear() {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		trigs[l].sound = 0;
 		defers[l].counter = 0;
@@ -31,10 +24,7 @@ int triggers_clear()
 }
 
 // Validated
-// Should I remove the memcpy call replacing it with
-// no-library code?
-int triggers_save(int * buffer, int bufferSize)
-{
+int triggers_save(int * buffer, int bufferSize) {
 	if (bufferSize < 2848) {
 		return -5;
 	}
@@ -44,10 +34,7 @@ int triggers_save(int * buffer, int bufferSize)
 }
 
 // Validated
-// Should I remove the memcpy call replacing it with
-// no-library code?
-int triggers_restore(int * buffer)
-{
+int triggers_restore(int * buffer) {
 	memcpy(trigs, buffer, 2464);
 	memcpy(defers, buffer + 2464, 384);
 	triggers_defersOn = 1;
@@ -55,8 +42,7 @@ int triggers_restore(int * buffer)
 }
 
 // Validated
-int triggers_setTrigger(int soundId, char * marker, int opcode)
-{
+int triggers_setTrigger(int soundId, char *marker, int opcode) {
 	if (soundId == 0) {
 		return -5;
 	}
@@ -69,6 +55,7 @@ int triggers_setTrigger(int soundId, char * marker, int opcode)
 		printf("ERR: attempting to set trig with oversize marker string...");
 		return -5;
 	}
+
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		if (trigs[l].sound == 0) {
 			trigs[l].sound = soundId;
@@ -94,8 +81,7 @@ int triggers_setTrigger(int soundId, char * marker, int opcode)
 }
 
 // Validated
-int triggers_checkTrigger(int soundId, char * marker, int opcode)
-{
+int triggers_checkTrigger(int soundId, char *marker, int opcode) {
 	int r = 0;
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		if (trigs[l].sound != 0) {
@@ -112,8 +98,7 @@ int triggers_checkTrigger(int soundId, char * marker, int opcode)
 }
 
 // Validated
-int triggers_clearTrigger(int soundId, char * marker, int opcode)
-{
+int triggers_clearTrigger(int soundId, char *marker, int opcode) {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		if ((trigs[l].sound != 0) && (soundId == -1 || trigs[l].sound == soundId) &&
 			(marker || !triggers_compareTEXT(marker, trigs[l].text)) &&
@@ -130,8 +115,7 @@ int triggers_clearTrigger(int soundId, char * marker, int opcode)
 }
 
 // Validated
-void triggers_processTriggers(int soundId, char * marker)
-{
+void triggers_processTriggers(int soundId, char *marker) {
 	char textBuffer[256];
 	int r;
 	if (triggers_getMarkerLength(marker) >= 256) {
@@ -159,8 +143,7 @@ void triggers_processTriggers(int soundId, char * marker)
 				if (triggers_initDataPtr == NULL || triggers_initDataPtr->scriptCallback == NULL) {
 					printf("ERR: null callback in InitData struct...");
 				} else {
-					// Call the script callback (which is usually a function which
-					// the current sequence when _stoppingSequence == 1
+					// Call the script callback (a function which sets _stoppingSequence to 1)
 					triggers_initDataPtr->scriptCallback(triggers_textBuffer, trigs[l].args_0_,
 						trigs[l].args_1_, trigs[l].args_2_,
 						trigs[l].args_3_, trigs[l].args_4_,
@@ -179,6 +162,7 @@ void triggers_processTriggers(int soundId, char * marker)
 						trigs[l].args_9_, -1, -1, -1, -1);
 				} else {
 					// The opcode field is not a command opcode but a pointer to function
+					// This is used for speech only
 					int(*func)() = trigs[l].opcode;
 					func(triggers_textBuffer, trigs[l].args_0_,
 						trigs[l].args_1_, trigs[l].args_2_,
@@ -210,8 +194,7 @@ void triggers_processTriggers(int soundId, char * marker)
 }
 
 // Validated
-int triggers_deferCommand(int count, int opcode)
-{
+int triggers_deferCommand(int count, int opcode) {
 	if (!count) {
 		return -5;
 	}
@@ -239,8 +222,7 @@ int triggers_deferCommand(int count, int opcode)
 }
 
 // Validated
-void triggers_loop()
-{
+void triggers_loop() {
 	if (!triggers_defersOn)
 		return;
 
@@ -289,8 +271,7 @@ void triggers_loop()
 }
 
 // Validated
-int triggers_countPendingSounds(int soundId)
-{
+int triggers_countPendingSounds(int soundId) {
 	int r = 0;
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		if (!trigs[l].sound)
@@ -314,8 +295,7 @@ int triggers_countPendingSounds(int soundId)
 }
 
 // Validated
-int triggers_moduleFree()
-{
+int triggers_moduleFree() {
 	for (int l = 0; l < MAX_TRIGGERS; l++) {
 		trigs[l].sound = 0;
 		defers[l].counter = 0;
@@ -327,8 +307,7 @@ int triggers_moduleFree()
 
 // Validated
 // Probably just a strcpy, but if there's undefined behavior it's best to match it
-void triggers_copyTEXT(char * dst, char * marker)
-{
+void triggers_copyTEXT(char *dst, char *marker) {
 	char currentChar;
 
 	if ((dst != NULL) && (marker != NULL)) {
@@ -344,8 +323,7 @@ void triggers_copyTEXT(char * dst, char * marker)
 
 // Validated
 // Probably just a stricmp, but if there's undefined behavior it's best to match it
-int triggers_compareTEXT(char * marker1, char * marker2)
-{
+int triggers_compareTEXT(char *marker1, char *marker2) {
 	if (*marker1 != 0) {
 		while ((*marker2 != 0 && (*marker1 == *marker2))) {
 			marker1 = marker1 + 1;
@@ -360,8 +338,7 @@ int triggers_compareTEXT(char * marker1, char * marker2)
 
 // Validated
 // Probably just a strlen, but if there's undefined behavior it's best to match it
-int triggers_getMarkerLength(char * marker)
-{
+int triggers_getMarkerLength(char *marker) {
 	int resultingLength;
 	char curChar;
 

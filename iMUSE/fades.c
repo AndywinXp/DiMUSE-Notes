@@ -1,11 +1,7 @@
 #include "fades.h"
-#include "commands.h"
-#include <string.h>
-#include <stdio.h>
 
 // Validated
-int fades_moduleInit()
-{
+int fades_moduleInit() {
 	for (int l = 0; l < MAX_FADES; l++) {
 		fades[l].status = 0;
 	}
@@ -14,14 +10,12 @@ int fades_moduleInit()
 }
 
 // Validated
-int fades_moduleDeinit()
-{
+int fades_moduleDeinit() {
 	return 0;
 }
 
 // Validated
-int fades_save(unsigned char *buffer, int sizeLeft)
-{
+int fades_save(unsigned char *buffer, int sizeLeft) {
 	// We're saving 640 bytes:
 	// which means 10 ints (4 bytes each) for 16 times (number of fades)
 	if (sizeLeft < 640)
@@ -31,25 +25,25 @@ int fades_save(unsigned char *buffer, int sizeLeft)
 }
 
 // Validated
-int fades_restore(unsigned char *buffer)
-{
+int fades_restore(unsigned char *buffer) {
 	memcpy(fades, buffer, 640);
 	fadesOn = 1;
 	return 640;
 }
 
 // Validated
-int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLength)
-{
+int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLength) {
 	if (!soundId || fadeLength < 0)
 		return -5;
 	if (opcode != 0x500 && opcode != 0x600 && opcode != 0x700 && opcode != 0x800 && opcode != 0xF00 && opcode != 17)
 		return -5;
+	
 	for (int l = 0; l < MAX_FADES; l++) {
 		if (fades[l].status && fades[l].sound == soundId && (fades[l].param == opcode || opcode == -1)) {
 			fades[l].status = 0;
 		}
 	}
+
 	if (!fadeLength) {
 		if (opcode != 0x600 || destinationValue) {
 			// IMUSE_CMDS_SetParam
@@ -90,22 +84,19 @@ int fades_fadeParam(int soundId, int opcode, int destinationValue, int fadeLengt
 	return -6;
 }
 
-void fades_clearFadeStatus(int soundId, int opcode)
-{
+// Validated
+void fades_clearFadeStatus(int soundId, int opcode) {
 	for (int l = 0; l < MAX_FADES; l++) {
-		if (fades[l].status == 0)
-			continue;
-		if (fades[l].sound != soundId)
-			continue;
-		if (fades[l].param == opcode || opcode == -1) {
+		if (fades[l].status == 0 
+			&& fades[l].sound == soundId 
+			&& (fades[l].param == opcode || opcode == -1)) {
 			fades[l].status = 0;
 		}
 	}
 }
 
 // Validated
-void fades_loop()
-{
+void fades_loop() {
 	if (!fadesOn)
 		return;
 	fadesOn = 0;
@@ -145,8 +136,7 @@ void fades_loop()
 }
 
 // Validated
-void fades_moduleFree()
-{
+void fades_moduleFree() {
 	for (int l = 0; l < MAX_FADES; l++) {
 		fades[l].status = 0;
 	}
@@ -154,8 +144,7 @@ void fades_moduleFree()
 }
 
 // Validated
-int fades_moduleDebug()
-{
+int fades_moduleDebug() {
 	printf("fadesOn: %d", fadesOn);
 
 	for (int l = 0; l < MAX_FADES; l++) {

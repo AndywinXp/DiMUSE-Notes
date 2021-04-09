@@ -5,7 +5,6 @@
 
 #define MAX_STREAMS 3
 
-
 typedef struct {
 	int soundId;
 	int curOffset;
@@ -19,25 +18,25 @@ typedef struct {
 	int loadIndex;
 	int readIndex;
 	int paused;
-} iMUSEStreams;
+} iMUSEStream;
 
 iMUSEInitData * streamer_initDataPtr;
-iMUSEStreams streamer_streams[3];
-iMUSEStreams *streamer_lastStreamLoaded;
+iMUSEStream streamer_streams[3];
+iMUSEStream *streamer_lastStreamLoaded;
 int streamer_bailFlag;
 
 int streamer_moduleInit();
-iMUSEStreams *streamer_alloc(int soundId, int bufId, int maxRead);
-int streamer_clearSoundInStream(iMUSEStreams *streamPtr);
+iMUSEStream *streamer_alloc(int soundId, int bufId, int maxRead);
+int streamer_clearSoundInStream(iMUSEStream *streamPtr);
 int streamer_processStreams();
-int streamer_reAllocReadBuffer(iMUSEStreams *streamPtr, unsigned int reallocSize);
-int streamer_copyBufferAbsolute(iMUSEStreams *streamPtr, int offset, int size);
-int streamer_setIndex1(iMUSEStreams *streamPtr, unsigned int offset);
-int streamer_setIndex2(iMUSEStreams *streamPtr, unsigned int offset);
-int streamer_getFreeBuffer(iMUSEStreams *streamPtr);
-int streamer_setSoundToStreamWithCurrentOffset(iMUSEStreams *streamPtr, int soundId, int currentOffset);
-int streamer_queryStream(iMUSEStreams *streamPtr, int *bufSize, int *criticalSize, int *freeSpace, int *paused);
-int streamer_feedStream(iMUSEStreams *streamPtr, int *srcBuf, unsigned int sizeToFeed, int paused);
-int streamer_fetchData(iMUSEStreams *streamPtr);
+int *streamer_reAllocReadBuffer(iMUSEStream *streamPtr, unsigned int reallocSize);
+int *streamer_copyBufferAbsolute(iMUSEStream *streamPtr, int offset, int size);
+int streamer_setIndex1(iMUSEStream *streamPtr, unsigned int offset);
+int streamer_setIndex2(iMUSEStream *streamPtr, unsigned int offset);
+int streamer_getFreeBuffer(iMUSEStream *streamPtr);
+int streamer_setSoundToStreamWithCurrentOffset(iMUSEStream *streamPtr, int soundId, int currentOffset);
+int streamer_queryStream(iMUSEStream *streamPtr, int *bufSize, int *criticalSize, int *freeSpace, int *paused);
+int streamer_feedStream(iMUSEStream *streamPtr, int *srcBuf, unsigned int sizeToFeed, int paused);
+int streamer_fetchData(iMUSEStream *streamPtr);
 
 #endif

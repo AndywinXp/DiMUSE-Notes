@@ -1,6 +1,8 @@
 #ifndef DIGITAL_IMUSE_GROUPS
 #define DIGITAL_IMUSE_GROUPS
 
+#include "imuse.h"
+
 #define MAX_GROUPS 16
 #define IMUSE_GROUP_SFX 1
 #define IMUSE_GROUP_SPEECH 2

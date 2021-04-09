@@ -55,13 +55,12 @@ int wave_restore(unsigned char *buffer) {
 }
 
 // Validated
-int wave_setGroupVol() {
+void wave_setGroupVol() {
 	wvSlicingHalted++;
-	int result = tracks_setGroupVol();
+	tracks_setGroupVol();
 	if (wvSlicingHalted) {
 		wvSlicingHalted--;
 	}
-	return result;
 }
 
 // Validated

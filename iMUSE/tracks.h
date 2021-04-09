@@ -1,14 +1,13 @@
 #ifndef DIGITAL_IMUSE_TRACKS
 #define DIGITAL_IMUSE_TRACKS
-#include "dispatch.h"
-#include "imuseutils.h"
-#include <stdio.h>
+
+#include "imuse.h"
 
 #define MAX_TRACKS 8
 
-typedef struct iMUSETracks_node {
-	struct iMUSETracks_node *prev;
-	struct iMUSETracks_node *next;
+typedef struct iMUSETrack_node {
+	struct iMUSETrack_node *prev;
+	struct iMUSETrack_node *next;
 	iMUSEDispatch *dispatchPtr;
 	int soundId;
 	int *marker;
@@ -22,11 +21,11 @@ typedef struct iMUSETracks_node {
 	int pitchShift;
 	int mailbox;
 	int jumpHook;
-} iMUSETracks;
+} iMUSETrack;
 
-iMUSETracks tracks[MAX_TRACKS];
+iMUSETrack tracks[MAX_TRACKS];
 iMUSEInitData * tracks_initDataPtr;
-struct iMUSETracks *tracks_trackList;
+struct iMUSETrack *tracks_trackList;
 
 int tracks_trackCount;
 int (*tracks_waveCall)();
@@ -48,7 +47,7 @@ int tracks_stopAllSounds();
 int tracks_getNextSound(int soundId);
 int tracks_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSpace, int *paused);
 int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused);
-void tracks_clear(iMUSETracks *trackPtr);
+void tracks_clear(iMUSETrack *trackPtr);
 int tracks_setParam(int soundId, int opcode, int value);
 int tracks_getParam(int soundId, int opcode);
 int tracks_lipSync(int soundId, int syncId, int msPos, int *width, char *height);

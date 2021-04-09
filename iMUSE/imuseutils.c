@@ -1,7 +1,7 @@
 #include "imuseutils.h"
 
 // Validated
-int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item) {
+int iMUSE_addItemToList(iMUSETrack **listPtr, iMUSETrack *listPtr_Item) {
 	if (!listPtr_Item || listPtr_Item->prev || listPtr_Item->next) {
 		printf("ERR: list arg err when adding...\n");
 		return -5;
@@ -28,8 +28,8 @@ int iMUSE_addItemToList(iMUSETracks **listPtr, iMUSETracks *listPtr_Item) {
 }
 
 // Validated
-int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
-	iMUSETracks *track = *listPtr;
+int iMUSE_removeItemFromList(iMUSETrack **listPtr, iMUSETrack *itemPtr) {
+	iMUSETrack *track = *listPtr;
 	if (itemPtr && track) {
 		do {
 			if (track == itemPtr)
@@ -38,8 +38,8 @@ int iMUSE_removeItemFromList(iMUSETracks **listPtr, iMUSETracks *itemPtr) {
 		} while (track);
 
 		if (track) {
-			iMUSETracks *next_track = itemPtr->next;
-			iMUSETracks *prev_track = itemPtr->prev;
+			iMUSETrack *next_track = itemPtr->next;
+			iMUSETrack *prev_track = itemPtr->prev;
 
 			if (next_track)
 				next_track->prev = prev_track;
@@ -88,7 +88,7 @@ int iMUSE_clampTuning(int value, int minValue, int maxValue) {
 }
 
 // Validated
-int iMUSE_SWAP32(unsigned __int8 *value) {
+int iMUSE_SWAP32(uint8 *value) {
 	return value[3] | ((value[2] | ((value[1] | (*value << 8)) << 8)) << 8);
 }
 

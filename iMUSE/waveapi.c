@@ -1,9 +1,4 @@
 #include "waveapi.h"
-#include "wave.h"
-#include "tracks.h"
-#include "imuse.h"
-#include <stdio.h>
-#include <windows.h>
 
 // Validated
 int waveapi_moduleInit(int sampleRate, waveOutParams *waveoutParamStruct) {

@@ -1,6 +1,4 @@
 #include "files.h"
-#include "imuse.h"
-#include <stdio.h>
 
 // Validated
 int files_moduleInit(iMUSEInitData *initDataPtr) {
@@ -18,10 +16,10 @@ int files_moduleDeinit() {
 // Validated 
 // In the assembly this is written as "return files_initDataPtr(soundId)", but it's actually
 // pointing at the getSoundDataAddr function which is the first thing in the struct
-int files_getSoundAddrData(int soundId) {
+uint8 *files_getSoundAddrData(int soundId) {
 	if ((soundId != 0 && soundId < 0xFFFFFFF0) && files_initDataPtr != NULL) {
 		if (files_initDataPtr->getSoundDataAddr) {
-			return files_initDataPtr->getSoundDataAddr(soundId);
+			return (uint8 *) files_initDataPtr->getSoundDataAddr(soundId);
 		}
 	}
 	printf("ERR: soundAddrFunc failure");
@@ -29,7 +27,7 @@ int files_getSoundAddrData(int soundId) {
 }
 
 // TODO: what is this func_some1?
-int files_some1(soundId) {
+int files_some1(int soundId) {
 	if ((soundId != 0 && soundId < 0xFFFFFFF0) && files_initDataPtr != NULL) {
 		if (files_initDataPtr->func_some1) {
 			return files_initDataPtr->func_some1(soundId);
@@ -56,7 +54,7 @@ int files_checkRange(int soundId) {
 }
 
 // Validated
-int files_seek(int soundId, __int32 offset, int mode) {
+int files_seek(int soundId, int offset, int mode) {
 	if (soundId != 0 && soundId < 0xFFFFFFF0) {
 		if (files_initDataPtr->seekFunc != NULL) {
 			return files_initDataPtr->seekFunc(soundId, offset, mode);
@@ -67,7 +65,7 @@ int files_seek(int soundId, __int32 offset, int mode) {
 }
 
 // Validated
-int files_read(int soundId, unsigned char *buf, int size) {
+int files_read(int soundId, uint8 *buf, int size) {
 	if (soundId != 0 && soundId < 0xFFFFFFF0) {
 		if (files_initDataPtr->readFunc != NULL) {
 			return files_initDataPtr->readFunc(soundId, buf, size);

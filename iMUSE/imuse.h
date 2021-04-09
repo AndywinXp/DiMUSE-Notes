@@ -1,8 +1,33 @@
 #ifndef DIGITAL_IMUSE
 #define DIGITAL_IMUSE
 
-typedef struct 
-{
+#include "commands.h"
+#include "dispatch.h"
+#include "fades.h"
+#include "files.h"
+#include "groups.h"
+#include "imuseutils.h"
+#include "mixer.h"
+#include "streamer.h"
+#include "timer.h"
+#include "tracks.h"
+#include "triggers.h"
+#include "wave.h"
+#include "waveapi.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <windows.h>
+#include <string.h>
+
+// Remove this junk when porting to ScummVM
+
+typedef          char   int8;
+typedef unsigned char   uint8;
+typedef          short  int16;
+typedef unsigned short  uint16;
+typedef          int    bool;
+
+typedef struct {
 	int (*getSoundDataAddr)();
 	/*
 	int __cdecl getSoundDataAddr(int a1)

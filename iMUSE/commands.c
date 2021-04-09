@@ -1,11 +1,4 @@
-#include "imuse.h"
 #include "commands.h"
-#include "fades.h"
-#include "triggers.h"
-#include "groups.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define TO_LE32(x)	(x)
@@ -16,8 +9,7 @@
 #endif
 
 // Validated
-void iMUSEHeartbeat()
-{
+void iMUSEHeartbeat() {
 	// This is what happens:
 	// - Usual audio stuff like fetching and playing sound (and everything 
 	//   within waveapi_callback()) happens at a base 50Hz rate;
@@ -110,18 +102,15 @@ void iMUSEHeartbeat()
 // Validated
 int cmds_handleCmds(int cmd, int arg_0,  int arg_1,  int arg_2,  int arg_3,  int arg_4,
 						int arg_5,  int arg_6,  int arg_7,  int arg_8,  int arg_9,
-						int arg_10, int arg_11, int arg_12, int arg_13)
-{
+						int arg_10, int arg_11, int arg_12, int arg_13) {
 
-	if (cmd_initDataPtr == NULL && cmd != 0)
-	{
+	if (cmd_initDataPtr == NULL && cmd != 0) {
 		printf("ERROR:system not initialized...");
 		return -1;
 	}
 
 	int(*func)() = iMUSE_FuncList[cmd];
-	if (func != NULL && cmd < 30)
-	{
+	if (func != NULL && cmd < 30) {
 		if (cmd != 17 && cmd != 20)
 			func(arg_0,  arg_1,  arg_2,  arg_3,  arg_4,
 				 arg_5,  arg_6,  arg_7,  arg_8,  arg_9);
@@ -137,26 +126,29 @@ int cmds_handleCmds(int cmd, int arg_0,  int arg_1,  int arg_2,  int arg_3,  int
 }
 
 // Validated
-int cmds_init(iMUSEInitData * initDataPtr)
-{
+int cmds_init(iMUSEInitData * initDataPtr) {
 	if (cmd_initDataPtr) {
 		printf("ERROR:system already initialized...");
 		return -1;
 	}
+
 	if (initDataPtr == NULL) {
 		printf("ERROR: null initDataPtr...");
 		return -1;
 	}
+
 	cmd_hostIntHandler = initDataPtr->hostIntHandler;
 	cmd_hostIntUsecCount = initDataPtr->hostIntUsecCount;
 	cmd_runningHostCount = 0;
 	cmd_running60HzCount = 0;
 	cmd_running10HzCount = 0;
 	initDataPtr->num60hzIterations = 0;
+
 	if (files_moduleInit(initDataPtr) || groups_moduleInit() || fades_moduleInit() ||
 		triggers_moduleInit(initDataPtr) || wave_init(initDataPtr) || timer_moduleInit(initDataPtr)) {
 		return -1;
 	}
+
 	cmd_initDataPtr = initDataPtr;
 	cmd_pauseCount = 0;
 	//vh_initModule("iMUSE:source:commands.c", IMUSE_CMDS_DEINIT, IMUSE_CMDS_DEBUG, IMUSE_CMDS_MODULE_SPECIAL);
@@ -164,8 +156,7 @@ int cmds_init(iMUSEInitData * initDataPtr)
 }
 
 // Validated
-int cmds_deinit()
-{
+int cmds_deinit() {
 	cmd_initDataPtr = NULL;
 	timer_moduleDeinit();
 	wave_terminate();
@@ -185,27 +176,23 @@ int cmds_deinit()
 }
 
 // Validated
-int cmds_terminate()
-{
+int cmds_terminate() {
 	//vh_ReleaseModule("iMUSE");
 	return 0;
 }
 
 // Duplicate save/load stuff, I don't think we need it for the time being
-int cmds_persistence(int cmd, void * funcCall)
-{
+int cmds_persistence(int cmd, void *funcCall) {
 	return 0;
 }
 
 // Validated (or at least good enough)
-int cmds_print(int param1, int param2, int param3, int param4, int param5, int param6, int param7)
-{
+int cmds_print(int param1, int param2, int param3, int param4, int param5, int param6, int param7) {
 	return printf("%d %d %d %d %d %d %d", param1, param2, param3, param4, param5, param6, param7);
 }
 
 // Validated
-int cmds_pause()
-{
+int cmds_pause() {
 	int result = 0;
 
 	if (cmd_pauseCount == 0) {
@@ -221,8 +208,7 @@ int cmds_pause()
 }
 
 // Validated
-int cmds_resume()
-{
+int cmds_resume() {
 	int result = 0;
 
 	if (cmd_pauseCount == 1) {
@@ -241,8 +227,7 @@ int cmds_resume()
 }
 
 // Validated
-int cmds_save(int * buffer, int bufferSize)
-{
+int cmds_save(int * buffer, int bufferSize) {
 	if (bufferSize < 10000) {
 		printf("ERR: save buffer too small...");
 		return -1;
@@ -250,6 +235,7 @@ int cmds_save(int * buffer, int bufferSize)
 
 	buffer[0] = 0x30;
 	buffer[1] = *(int*) cmd_initDataPtr->waveMixCount;
+	
 	int savedSize = fades_save((buffer + 8), bufferSize - 8);
 	if (savedSize >= 0) {
 		int tmpSize = savedSize + 8;
@@ -261,15 +247,16 @@ int cmds_save(int * buffer, int bufferSize)
 		if (savedSize >= 0)
 			savedSize += tmpSize;
 	}
+
 	return savedSize;
 }
 
 // Validated
-int cmds_restore(int * buffer)
-{
+int cmds_restore(int *buffer) {
 	fades_moduleDeinit();
 	triggers_clear();
 	wave_stopAllSounds();
+
 	if (buffer[0] != 0x30) {
 		printf("ERR: restore buffer contains bad data...");
 		return -1;
@@ -287,9 +274,8 @@ int cmds_restore(int * buffer)
 }
 
 // Validated
-int cmds_startSound(int soundId, int priority)
-{
-	int src = files_getSoundAddrData(soundId);
+int cmds_startSound(int soundId, int priority) {
+	uint8 *src = files_getSoundAddrData(soundId);
 	int stringIndex = 0;
 
 	if (src == NULL) {
@@ -298,9 +284,9 @@ int cmds_startSound(int soundId, int priority)
 	}
 
 	// Check for the "iMUS" header
-	char *iMUSstring = (char*)TO_LE32("iMUS");
+	uint8 *iMUSstring = (uint8*)TO_LE32("iMUS");
 	do {
-		if (*(char *)(src + stringIndex) != iMUSstring[stringIndex])
+		if (src[stringIndex] != iMUSstring[stringIndex])
 			break;
 		stringIndex += 1;
 	} while (stringIndex < 4);
@@ -313,42 +299,43 @@ int cmds_startSound(int soundId, int priority)
 }
 
 // Validated
-int cmds_stopSound(int soundId)
-{
+int cmds_stopSound(int soundId) {
 	int result = files_getNextSound(soundId);
+	
 	if (result != 2)
 		return -1;
+
 	return wave_stopSound(soundId);
 }
 
 // Validated
-int cmds_stopAllSounds()
-{
+int cmds_stopAllSounds() {
 	int result = fades_moduleDeinit();
 	result |= triggers_clear();
 	result |= wave_stopAllSounds();
+	
 	return result;
 }
 
 // Validated
-int cmds_getNextSound(int soundId)
-{
+int cmds_getNextSound(int soundId) {
 	return wave_getNextSound(soundId);
 }
 
 // Validated
-int cmds_setParam(int soundId, int subCmd, int value)
-{
+int cmds_setParam(int soundId, int subCmd, int value) {
 	int result = files_getNextSound(soundId);
+	
 	if (result != 2)
 		return -1;
+	
 	return wave_setParam(soundId, subCmd, value);
 }
 
 // Validated
-int cmds_getParam(int soundId, int subCmd)
-{
+int cmds_getParam(int soundId, int subCmd) {
 	int result = files_getNextSound(soundId);
+	
 	if (subCmd != 0) {
 		if (subCmd == 0x200) {
 			return triggers_countPendingSounds(soundId);
@@ -365,26 +352,27 @@ int cmds_getParam(int soundId, int subCmd)
 }
 
 // Validated
-int cmds_setHook(int soundId, int hookId)
-{
+int cmds_setHook(int soundId, int hookId) {
 	int result = files_getNextSound(soundId);
+	
 	if (result != 2)
 		return -1;
+	
 	return wave_setHook(soundId, hookId);
 }
 
 // Validated
-int cmds_getHook(int soundId)
-{
+int cmds_getHook(int soundId) {
 	int result = files_getNextSound(soundId);
+	
 	if (result != 2)
 		return -1;
+	
 	return wave_getHook(soundId);
 }
 
 // Validated
-int cmds_debug()
-{
+int cmds_debug() {
 	printf("initImuseDataPtr: %p", cmd_initDataPtr);
 	printf("pauseCount: %d", cmd_pauseCount);
 	printf("hostIntHandler: %p", cmd_hostIntHandler);
@@ -392,5 +380,6 @@ int cmds_debug()
 	printf("runningHostCount: %d", cmd_runningHostCount);
 	printf("running60HzCount: %d", cmd_running60HzCount);
 	printf("running10HzCount: %d", cmd_running10HzCount);
+	
 	return 0;
 }

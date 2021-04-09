@@ -1,10 +1,11 @@
 #ifndef DIGITAL_IMUSE_FADES
 #define DIGITAL_IMUSE_FADES
 
+#include "imuse.h"
+
 #define MAX_FADES 16
 
-typedef struct
-{
+typedef struct {
 	int status;
 	int sound;
 	int param;
@@ -15,9 +16,9 @@ typedef struct
 	int slopeMod;
 	int modOvfloCounter;
 	int nudge;
-} iMUSEFades;
+} iMUSEFade;
 
-iMUSEFades fades[MAX_FADES];
+iMUSEFade fades[MAX_FADES];
 int fadesOn;
 
 int fades_moduleInit();

@@ -259,7 +259,7 @@ int mixer_loop(uint8 *destBuffer, unsigned int len) {
 }
 
 // Validated
-void mixer_mixBits8Mono(uint8 * srcBuf, int inFrameCount, int feedSize, int mixBufStartIndex, int *ampTable) {
+void mixer_mixBits8Mono(uint8 *srcBuf, int inFrameCount, int feedSize, int mixBufStartIndex, int *ampTable) {
 	uint16 *mixBufCurCell;
 	uint8 *srcBuf_ptr;
 	uint8 *ptr;

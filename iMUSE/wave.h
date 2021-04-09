@@ -11,7 +11,7 @@ int wave_pause();
 int wave_resume();
 int wave_save(unsigned char *buffer, int bufferSize);
 int wave_restore(unsigned char *buffer);
-int wave_setGroupVol();
+void wave_setGroupVol();
 int wave_startSound(int soundId, int priority);
 int wave_stopSound(int soundId);
 int wave_stopAllSounds();

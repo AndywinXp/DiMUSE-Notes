@@ -1,11 +1,12 @@
 #ifndef DIGITAL_IMUSE_TRIGGERS
 #define DIGITAL_IMUSE_TRIGGERS
 
+#include "imuse.h"
+
 #define MAX_TRIGGERS 8
 #define MAX_DEFERS 8
 
-typedef struct
-{
+typedef struct {
 	int sound;
 	char text[256];
 	int opcode;
@@ -20,10 +21,9 @@ typedef struct
 	int args_8_;
 	int args_9_;
 	int clearLater;
-} iMUSETriggers;
+} iMUSETrigger;
 
-typedef struct
-{
+typedef struct {
 	int counter;
 	int opcode;
 	int args_0_;
@@ -36,10 +36,10 @@ typedef struct
 	int args_7_;
 	int args_8_;
 	int args_9_;
-} iMUSEDefers;
+} iMUSEDefer;
 
-iMUSETriggers trigs[MAX_TRIGGERS];
-iMUSEDefers defers[MAX_DEFERS];
+iMUSETrigger trigs[MAX_TRIGGERS];
+iMUSEDefer defers[MAX_DEFERS];
 
 int  triggers_moduleInit(iMUSEInitData *initDataPtr);
 int  triggers_clear();

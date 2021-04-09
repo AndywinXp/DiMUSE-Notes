@@ -1,6 +1,7 @@
 #ifndef DIGITAL_IMUSE_WAVEAPI
 #define DIGITAL_IMUSE_WAVEAPI
-#include <windows.h>
+
+#include "imuse.h"
 
 #define NUM_HEADERS 8
 

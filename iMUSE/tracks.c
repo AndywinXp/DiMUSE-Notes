@@ -1,11 +1,4 @@
 #include "tracks.h"
-#include "imuse.h"
-#include "imuseutils.h"
-#include "fades.h"
-#include "triggers.h"
-#include "dispatch.h"
-#include "waveapi.h"
-#include <stdio.h> 
 
 // Validated
 // TODO: another check and proper types
@@ -103,7 +96,7 @@ int tracks_restore(int *buffer) {
 
 // Validated
 void tracks_setGroupVol() {
-	iMUSETracks* curTrack = tracks_trackList;
+	iMUSETrack* curTrack = tracks_trackList;
 	int tmp;
 
 	while (curTrack) {
@@ -157,10 +150,10 @@ void tracks_callback() {
 					tracks_initDataPtr->SMUSH_related_function(); 
 				}
 			}
-			iMUSETracks *track = tracks_trackList;
+			iMUSETrack *track = tracks_trackList;
 
 			while (track) {
-				iMUSETracks *next = track->next;
+				iMUSETrack *next = track->next;
 				dispatch_processDispatches(track, iMUSE_feedSize, iMUSE_sampleRate);
 				track = next;
 			};
@@ -188,7 +181,7 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 				break;
 		}
 
-		iMUSETracks *foundTrack = &tracks[l];
+		iMUSETrack *foundTrack = &tracks[l];
 		if (!foundTrack)
 			return -6;
 
@@ -219,9 +212,9 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 	printf("ERR: no spare tracks...\n");
 
 	// Let's steal the track with the lowest priority
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	int bestPriority = 127;
-	iMUSETracks *stolenTrack = NULL;
+	iMUSETrack *stolenTrack = NULL;
 
 	while (track) {
 		int curTrackPriority = track->priority;
@@ -273,7 +266,7 @@ int tracks_stopSound(int soundId) {
 	if (!tracks_trackList)
 		return -1;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	do {
 		if (track->soundId == soundId) {
 			iMUSE_removeItemFromList(&tracks_trackList, track);
@@ -293,7 +286,7 @@ int tracks_stopAllSounds() {
 	waveapi_increaseSlice();
 
 	if (tracks_trackList) {
-		iMUSETracks *track = tracks_trackList;
+		iMUSETrack *track = tracks_trackList;
 		do {
 			iMUSE_removeItemFromList(&tracks_trackList, track);
 			dispatch_release(track);
@@ -312,7 +305,7 @@ int tracks_stopAllSounds() {
 // Validated
 int tracks_getNextSound(int soundId) {
 	int found_soundId = 0;
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	while (track) {
 		if (track->soundId > soundId) {
 			if (!found_soundId || track->soundId < found_soundId) {
@@ -330,7 +323,7 @@ int tracks_queryStream(int soundId, int *bufSize, int *criticalSize, int *freeSp
 	if (!tracks_trackList)
 		return -1;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	do {
 		if (track->soundId) {
 			if (track->soundId == soundId && track->dispatchPtr->streamPtr) {
@@ -349,7 +342,7 @@ int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 	if (!tracks_trackList)
 		return -1;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	do {
 		if (track->soundId != 0) {
 			if (track->soundId == soundId && track->dispatchPtr->streamPtr) {
@@ -364,7 +357,7 @@ int tracks_feedStream(int soundId, int srcBuf, int sizeToFeed, int paused) {
 }
 
 // Validated
-void tracks_clear(iMUSETracks *trackPtr) {
+void tracks_clear(iMUSETrack *trackPtr) {
 	iMUSE_removeItemFromList(&tracks_trackList, trackPtr);
 	dispatch_release(trackPtr);
 	fades_clearFadeStatus(trackPtr->soundId, -1);
@@ -377,7 +370,7 @@ int tracks_setParam(int soundId, int opcode, int value) {
 	if (!tracks_trackList)
 		return -4;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	while (track) {
 		if (track->soundId == soundId) {
 			switch (opcode) {
@@ -451,7 +444,7 @@ int tracks_getParam(int soundId, int opcode) {
 		else
 			return 0;
 	}
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	int l = 0;
 	do {
 		if (track->soundId == soundId) {
@@ -511,7 +504,7 @@ int tracks_getParam(int soundId, int opcode) {
 int tracks_lipSync(int soundId, int syncId, int msPos, int *width, char *height) {
 	int w = 0;
 	int h = 0;
-	iMUSETracks *track = *(iMUSETracks**)tracks_trackList;
+	iMUSETrack *track = *(iMUSETrack**)tracks_trackList;
 	int result = 0;
 
 	if (msPos < 0) {
@@ -590,7 +583,7 @@ int tracks_setHook(int soundId, int hookId) {
 	if (!tracks_trackList)
 		return -4;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	while (track->soundId != soundId) {
 		track = track->next;
 		if (!track)
@@ -607,7 +600,7 @@ int tracks_getHook(int soundId) {
 	if (!tracks_trackList)
 		return -4;
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	while (track->soundId != soundId) {
 		track = track->next;
 		if (!track)
@@ -624,7 +617,7 @@ void tracks_free() {
 
 	waveapi_increaseSlice();
 
-	iMUSETracks *track = tracks_trackList;
+	iMUSETrack *track = tracks_trackList;
 	do {
 		iMUSE_removeItemFromList(&tracks_trackList, &track);
 

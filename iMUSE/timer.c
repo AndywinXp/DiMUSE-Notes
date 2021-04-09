@@ -1,6 +1,4 @@
 #include "timer.h"
-#include "imuse.h"
-#include <stdio.h> 
 
 // Validated
 // Not including vh_initModule call
