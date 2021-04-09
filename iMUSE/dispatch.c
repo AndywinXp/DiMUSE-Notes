@@ -414,8 +414,6 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 
 		// If we were able to allocate a fade, set up a fade out for the old sound.
 		// We'll copy data from the stream buffer to the fade buffer
-		// It appears that The DIG (at least the Windows 95 version)
-		// doesn't do fade-ins for the new sound!
 		if (curDispatch->fadeBuf) {
 			curDispatch->fadeOffset = 0;
 			curDispatch->fadeRemaining = 0;
@@ -437,7 +435,7 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 					(const void *)streamer_reAllocReadBuffer(curDispatch->streamPtr, effFadeSize), 
 					effFadeSize);
 
-				curDispatch->fadeRemaining = effFadeSize + curDispatch->fadeRemaining;
+				curDispatch->fadeRemaining += effFadeSize;
 			}
 		} else {
 			printf("WARNING:DpSwitchStream() couldn't alloc fade buf...\n");
@@ -804,7 +802,11 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 				}
 			}
 			
+			// If there's a fadeBuffer active in our dispatch
+			// we balance the volume of the considered track with 
+			// the fade volume, effectively creating a crossfade
 			if (dispatchPtr->fadeBuf) {
+				// Fade-in
 				mixVolume = (dispatchPtr->trackPtr->effVol * (128 - (dispatchPtr->fadeVol / 65536))) / 128;
 
 				// Update the fadeSlope
