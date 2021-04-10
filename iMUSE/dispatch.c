@@ -878,7 +878,6 @@ int dispatch_predictFirstStream() {
 }
 
 // Almost validated, fade allocation stuff to rename
-// add more comments
 int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 	int *dstMap;
 	int *rawMap;
@@ -898,7 +897,8 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 
 	dstMap = &dispatchPtr->map;
 
-	// If there's no map, fetch it
+	// Sanity checks for the correct file format
+	// and the correct state of the stream in the current dispatch
 	if (dispatchPtr->map[0] != 'MAP ') {
 		if (dispatchPtr->currentOffset) {
 			printf("ERR: GetMap found offset but no map...\n");
@@ -948,6 +948,8 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 		}
 
 		if (dispatchPtr->streamPtr) {
+			// If there's a streamPtr it means that we already have the sound in memory
+			// so we just fetch and convert the map
 			copiedBuf = (uint8 *)streamer_copyBufferAbsolute(dispatchPtr->streamPtr, 0, 0x10u);
 
 			if (!copiedBuf) {
@@ -1001,6 +1003,7 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 			}
 
 		} else {
+			// Otherwise we load the sound from scratch
 			soundAddrData = files_getSoundAddrData(dispatchPtr->trackPtr->soundId);
 			
 			if (!soundAddrData) {
@@ -1042,6 +1045,7 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 		curOffset = dispatchPtr->currentOffset;
 
 		if (mapCurPos) {
+			// Advance the map to the next block (mapCurPos[1] + 8 is the size of the block)
 			mapCurPos = (int *)((int8 *)mapCurPos + mapCurPos[1] + 8);
 			if ((int8 *)&dispatchPtr->map[2] + dispatchPtr->map[1] > (int8 *)mapCurPos) {
 				if (mapCurPos[2] != curOffset) {
