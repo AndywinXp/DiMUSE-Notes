@@ -76,7 +76,7 @@ int dispatch_predictFirstStream();
 int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr);
 int dispatch_convertMap(uint8 *rawMap, uint8 *destMap);
 void dispatch_predictStream(iMUSEDispatch *dispatch);
-void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZonePtr, int *jumpParamsFromMap, int calledFromGetMap);
+void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZonePtr, int *jumpParamsFromMap, int calledFromGetNextMapEvent);
 iMUSEStreamZone *dispatch_allocStreamZone();
 void dispatch_free();
 

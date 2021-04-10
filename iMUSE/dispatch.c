@@ -1081,7 +1081,14 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 
 		blockName = mapCurPos[0];
 
-		// Handle any event reached at this offset
+		// Handle any event found at this offset
+		// Jump block (fixed size: 28 bytes)
+		// - The string 'JUMP' (4 bytes)
+		// - Block size in bytes minus 8 (4 bytes)
+		// - Block offset (hook position) (4 bytes)
+		// - Jump destination offset (4 bytes)
+		// - Hook ID (4 bytes)
+		// - Fade time in ms (4 bytes)
 		if (blockName == 'JUMP') {
 			if (!iMUSE_checkHookId(&dispatchPtr->trackPtr->jumpHook, mapCurPos[4])) {
 				// This is the right hookId, let's jump
@@ -1201,12 +1208,13 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 							dispatchPtr->fadeVol = MAX_FADE_VOLUME;
 							dispatchPtr->fadeSlope = 0;
 
+							// Basically clone the old sound in the fade buffer for just the duration of the fade 
 							if (dispatch_requestedFadeSize) {
 								do {
 									effFadeSize = dispatch_requestedFadeSize - dispatchPtr->fadeRemaining;
 									if ((unsigned int)(dispatch_requestedFadeSize - dispatchPtr->fadeRemaining) >= 0x2000)
 										effFadeSize = 0x2000;
-										
+									
 									memcpy(
 										(void *)(dispatchPtr->fadeBuf + dispatchPtr->fadeRemaining),
 										(const void *)streamer_reAllocReadBuffer(dispatchPtr->streamPtr, effFadeSize),
@@ -1235,6 +1243,14 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 				return 0;
 		} 
 
+		// Format block (fixed size: 28 bytes)
+		// - The string 'FRMT' (4 bytes)
+		// - Block size in bytes minus 8 (4 bytes)
+		// - Block offset (4 bytes)
+		// - Empty field (4 bytes) (which is set to 1 in Grim Fandango)
+		// - Word size between 8, 12 and 16 (4 bytes)
+		// - Sample rate (4 bytes)
+		// - Number of channels (4 bytes)
 		if (blockName == 'FRMT') {
 			dispatchPtr->wordSize = mapCurPos[4];
 			dispatchPtr->sampleRate = mapCurPos[5];
@@ -1243,6 +1259,11 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 			continue;
 		}		
 		
+		// Region block (fixed size: 16 bytes)
+		// - The string 'REGN' (4 bytes)
+		// - Block size in bytes minus 8 (4 bytes)
+		// - Block offset (4 bytes)
+		// - Region length (4 bytes)
 		if (blockName == 'REGN') {
 			regionOffset = mapCurPos[2];
 			if (regionOffset == dispatchPtr->currentOffset) {
@@ -1253,10 +1274,21 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 				return -1;
 			}
 		}
-			
+		
+		// Stop block (fixed size: 12 bytes)
+		// Contains:
+		// - The string 'STOP' (4 bytes)
+		// - Block size in bytes minus 8 (4 bytes)
+		// - Block offset (4 bytes)
 		if (blockName == 'STOP')
 			return -1;
 
+		// Marker block (variable size)
+		// Contains:
+		// - The string 'TEXT' (4 bytes)
+		// - Block size in bytes minus 8 (4 bytes)
+		// - Block offset (4 bytes)
+		// - A string of characters ending with '\0' (variable length)
 		if (blockName == 'TEXT') {
 			char *marker = (char *)mapCurPos + 12;
 			triggers_processTriggers(dispatchPtr->trackPtr->soundId, marker);
@@ -1459,8 +1491,7 @@ void dispatch_predictStream(iMUSEDispatch *dispatch) {
 }
 
 // Almost validated, list stuff to check
-// add more comments
-void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZonePtr, int *jumpParamsFromMap, int calledFromGetMap) {
+void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZonePtr, int *jumpParamsFromMap, int calledFromGetNextMapEvent) {
 	int hookPosition, jumpDestination, fadeTime;
 	iMUSEStreamZone *nextStreamZone;
 	unsigned int alignmentModDividend;
@@ -1482,11 +1513,14 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 	jumpDestination = jumpParamsFromMap[3];
 	fadeTime = jumpParamsFromMap[5];
 
+	// Edge cases handling
 	if (streamZonePtr->size + streamZonePtr->offset == hookPosition) {
 		nextStreamZone = streamZonePtr->next;
 		if (nextStreamZone) {
-			// If the next stream zone is already fading
 			if (nextStreamZone->fadeFlag) {
+				// Avoid jumping if the next stream zone is already fading
+				// and its ending position is our jump destination.
+				// Basically: cancel the jump if there's already a fade in progress
 				if (nextStreamZone->offset == hookPosition) {
 					if (nextStreamZone->next) {
 						if (nextStreamZone->next->offset == jumpDestination)
@@ -1494,6 +1528,7 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 					}
 				}
 			} else {
+				// Avoid jumping if we're trying to jump to the next stream zone
 				if (nextStreamZone->offset == jumpDestination)
 					return;
 			}
@@ -1505,13 +1540,15 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 		* dispatchPtr->channelCount
 		* ((dispatchPtr->sampleRate * fadeTime / 1000u) & 0xFFFFFFFE)) / 8;
 	
-	if (!calledFromGetMap) {
-		if (dispatch_size + hookPosition - streamZonePtr->offset > streamZonePtr->size)
+	// If this function is being called from predictStream, 
+	// avoid accepting an oversized dispatch
+	if (!calledFromGetNextMapEvent) {
+		if (dispatch_size > streamZonePtr->size + streamZonePtr->offset - hookPosition)
 			return;
 	}
 
-	// If the effective fade dispatch size is lower than the maximum one, update it
-	if (streamZonePtr->size + streamZonePtr->offset - hookPosition < dispatch_size)
+	// Cap the dispatch size, if oversized
+	if (dispatch_size > streamZonePtr->size + streamZonePtr->offset - hookPosition)
 		dispatch_size = streamZonePtr->size + streamZonePtr->offset - hookPosition;
 
 	// Validate and adjust the fade dispatch size further;
@@ -1525,8 +1562,9 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 	}
 
 	if (hookPosition < jumpDestination)
-		dispatch_size = 0;
+		dispatch_size = NULL;
 
+	// Try allocating the two zones needed for the jump
 	zoneForJump = NULL;
 	if (dispatch_size) {
 		for (int i = 0; i < MAX_STREAMZONES; i++) {
@@ -1541,8 +1579,8 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 			return;
 		}
 
-		zoneForJump->prev = 0;
-		zoneForJump->next = 0;
+		zoneForJump->prev = NULL;
+		zoneForJump->next = NULL;
 		zoneForJump->useFlag = 1;
 		zoneForJump->offset = 0;
 		zoneForJump->size = 0;
@@ -1562,8 +1600,8 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 		return;
 	}
 
-	zoneAfterJump->prev = 0;
-	zoneAfterJump->next = 0;
+	zoneAfterJump->prev = NULL;
+	zoneAfterJump->next = NULL;
 	zoneAfterJump->useFlag = 1;
 	zoneAfterJump->offset = 0;
 	zoneAfterJump->size = 0;
@@ -1572,6 +1610,8 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 	streamZonePtr->size = hookPosition - streamZonePtr->offset;
 	streamOffset = hookPosition - streamZonePtr->offset + dispatch_size;
 
+	// Go to the interested stream zone to calculate the stream offset, 
+	// and schedule the sound to stream with that offset
 	zoneCycle = dispatchPtr->streamZoneList;
 	while (zoneCycle != streamZonePtr) {
 		streamOffset += zoneCycle->size;
@@ -1588,6 +1628,8 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 	streamer_setSoundToStreamWithCurrentOffset(dispatchPtr->streamPtr,
 		dispatchPtr->trackPtr->soundId, jumpDestination);
 
+	// Prepare the fading zone for the jump
+	// and also a subsequent empty dummy zone
 	if (dispatch_size) {
 		streamZonePtr->next = zoneForJump;
 		zoneForJump->prev = streamZonePtr;
@@ -1600,7 +1642,7 @@ void dispatch_parseJump(iMUSEDispatch *dispatchPtr, iMUSEStreamZone *streamZoneP
 
 	streamZonePtr->next = zoneAfterJump;
 	zoneAfterJump->prev = streamZonePtr;
-	zoneAfterJump->next = 0;
+	zoneAfterJump->next = NULL;
 	zoneAfterJump->offset = jumpDestination;
 	zoneAfterJump->size = 0;
 	zoneAfterJump->fadeFlag = 0;
