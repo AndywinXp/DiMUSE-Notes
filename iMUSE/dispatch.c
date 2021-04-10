@@ -488,7 +488,6 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 }
 
 // Validated
-// make more comments
 void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRate) {
 	iMUSEDispatch *dispatchPtr;
 	int inFrameCount;
@@ -632,9 +631,14 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 			dispatchPtr->fadeBuf = NULL;
 	}
 
+	// This index keeps track of the offset position until which we have
+	// filled the buffer; with each update it is incremented by the effective
+	// feed size.
 	mixStartingPoint = 0;
 
 	while (1) {
+		// If the current region is finished playing
+		// go check for any event on the map for the current offset
 		if (!dispatchPtr->audioRemaining) {
 			dispatch_fadeStartedFlag = 0;
 			getNextMapEventResult = dispatch_getNextMapEvent(dispatchPtr);
@@ -642,6 +646,8 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 			if (getNextMapEventResult)
 				break;
 			
+			// We reached a JUMP, therefore we have to crossfade to
+			// the destination region: start a fade-out
 			if (dispatch_fadeStartedFlag) {
 				inFrameCount = 8 * dispatchPtr->fadeRemaining / (dispatchPtr->fadeWordSize * dispatchPtr->fadeChannelCount);
 				
@@ -747,6 +753,7 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 			return;
 		}
 
+		// Play the audio of the current region
 		effRemainingAudio = (effWordSize * inFrameCount) / 8;
 		
 		if (dispatchPtr->streamPtr) {
@@ -785,6 +792,9 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 		}
 
 		if (dispatchPtr->fadeBuf) {
+			// If the fadeSyncFlag is active (e.g. we are crossfading
+			// to another version of the same music piece), do this... thing,
+			// and update the fadeSyncDelta
 			if (dispatchPtr->fadeSyncFlag) {
 				if (dispatchPtr->fadeSyncDelta) {
 					elapsedFadeDelta = effFeedSize;
@@ -802,7 +812,7 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 				}
 			}
 			
-			// If there's a fadeBuffer active in our dispatch
+			// If there's still a fadeBuffer active in our dispatch
 			// we balance the volume of the considered track with 
 			// the fade volume, effectively creating a crossfade
 			if (dispatchPtr->fadeBuf) {
@@ -823,7 +833,8 @@ void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRa
 			mixVolume = trackPtr->effVol;
 		}
 		
-		if (trackPtr->mailbox)
+		
+		if (trackPtr->mailbox) // Whatever this thing does
 			mixer_setRadioChatter();
 
 		mixer_mix(
@@ -1070,6 +1081,7 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 
 		blockName = mapCurPos[0];
 
+		// Handle any event reached at this offset
 		if (blockName == 'JUMP') {
 			if (!iMUSE_checkHookId(&dispatchPtr->trackPtr->jumpHook, mapCurPos[4])) {
 				// This is the right hookId, let's jump
@@ -1387,7 +1399,7 @@ void dispatch_predictStream(iMUSEDispatch *dispatch) {
 			endOfMap = (int *)((int8 *)&dispatch->map[2] + dispatch->map[1]);
 
 			while (1) {
-				// End of getNextMapEventResult, stream
+				// End of the map, stream
 				if (curMapPlace >= endOfMap) {
 					curMapPlace = NULL;
 					break;
