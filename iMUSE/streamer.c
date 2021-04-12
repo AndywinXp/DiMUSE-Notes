@@ -10,15 +10,14 @@ int streamer_moduleInit() {
 }
 
 // Validated
-// except for bufInfoPtr
 iMUSEStream *streamer_alloc(int soundId, int bufId, int maxRead) {
-	int bufInfoPtr = files_bufInfo(bufId);
+	iMUSESoundBuffer *bufInfoPtr = files_getBufInfo(bufId);
 	if (!bufInfoPtr) {
 		printf("ERR: streamer couldn't get buf info...");
 		return NULL;
 	}
 
-	if ((bufInfoPtr->sizeToFeed / 4) <= maxRead) {
+	if ((bufInfoPtr->bufSize / 4) <= maxRead) {
 		printf("ERR: maxRead too big for buf...");
 		return NULL;
 	}
@@ -36,8 +35,8 @@ iMUSEStream *streamer_alloc(int soundId, int bufId, int maxRead) {
 			streamer_streams[l].curOffset = 0;
 			streamer_streams[l].soundId = soundId;
 			streamer_streams[l].bufId = bufId;
-			streamer_streams[l].buf = bufInfoPtr->ptr; // Sound buffer; TODO: define and alloc sound buffers (iHost)
-			streamer_streams[l].bufFreeSize = bufInfoPtr->sizeToFeed - maxRead - 4;
+			streamer_streams[l].buf = bufInfoPtr->buffer;
+			streamer_streams[l].bufFreeSize = bufInfoPtr->bufSize - maxRead - 4;
 			streamer_streams[l].loadSize = bufInfoPtr->loadSize;
 			streamer_streams[l].criticalSize = bufInfoPtr->criticalSize;
 			streamer_streams[l].maxRead = maxRead;
@@ -242,8 +241,8 @@ int streamer_queryStream(iMUSEStream *streamPtr, int *bufSize, int *criticalSize
 	return 0;
 }
 
-// Validated
-int streamer_feedStream(iMUSEStream *streamPtr, int *srcBuf, unsigned int sizeToFeed, int paused) {
+// Validated (appears to be used for IACT blocks)
+int streamer_feedStream(iMUSEStream *streamPtr, uint8 *srcBuf, unsigned int sizeToFeed, int paused) {
 	int size = streamPtr->loadIndex - streamPtr->readIndex;
 	if (size <= 0)
 		size += streamPtr->bufFreeSize;
@@ -270,7 +269,7 @@ int streamer_feedStream(iMUSEStream *streamPtr, int *srcBuf, unsigned int sizeTo
 			size = sizeToFeed;
 		}
 		sizeToFeed -= size;
-		memcpy(streamPtr->buf + streamPtr->loadIndex, srcBuf, size);
+		memcpy(&streamPtr->buf[streamPtr->loadIndex], srcBuf, size);
 		srcBuf += size;
 
 		int val = size + streamPtr->loadIndex;
@@ -288,14 +287,14 @@ int streamer_feedStream(iMUSEStream *streamPtr, int *srcBuf, unsigned int sizeTo
 // Validated
 int streamer_fetchData(iMUSEStream *streamPtr) {
 	if (streamPtr->endOffset == 0) {
-		streamPtr->endOffset = files_Seek(streamPtr->soundId, 0, SEEK_END);
+		streamPtr->endOffset = files_seek(streamPtr->soundId, 0, SEEK_END);
 	}
 
 	int size = streamPtr->loadIndex - streamPtr->readIndex;
 	if (size <= 0)
 		size += streamPtr->bufFreeSize;
 
-	int loadSize = streamPtr->loadSize;
+	int loadSize = streamPtr->loadSize; // For music that's 11000 bytes
 	int remainingSize = streamPtr->endOffset - streamPtr->curOffset;
 	
 	if (loadSize >= size - 4) {
@@ -310,13 +309,13 @@ int streamer_fetchData(iMUSEStream *streamPtr) {
 		streamPtr->paused = 1;
 
 		// Pad the buffer
-		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		streamPtr->buf[streamPtr->loadIndex] = 127;
 		streamPtr->loadIndex++;
-		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		streamPtr->buf[streamPtr->loadIndex] = 127;
 		streamPtr->loadIndex++;
-		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		streamPtr->buf[streamPtr->loadIndex] = 127;
 		streamPtr->loadIndex++;
-		*(unsigned char *)(streamPtr->buf + streamPtr->loadIndex) = 127;
+		streamPtr->buf[streamPtr->loadIndex] = 127;
 		streamPtr->loadIndex++;
 	}
 
@@ -340,7 +339,7 @@ int streamer_fetchData(iMUSEStream *streamPtr) {
 
 		streamer_bailFlag = 0;
 		waveapi_decreaseSlice();
-		actualAmount = files_read(streamPtr->soundId, streamPtr->buf + streamPtr->loadIndex, requestedAmount);
+		actualAmount = files_read(streamPtr->soundId, &streamPtr->buf[streamPtr->loadIndex], requestedAmount);
 		waveapi_decreaseSlice();
 		if (streamer_bailFlag != 0)
 			return 0;

@@ -14,6 +14,7 @@
 #include "triggers.h"
 #include "wave.h"
 #include "waveapi.h"
+#include "host_utils.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <windows.h>
@@ -56,13 +57,15 @@ typedef struct {
 	int (*field_48)(); // Function related to SOU engine
 	int (*seekFunc)();
 	int (*readFunc)();
-	int (*bufInfoFunc)(); // ihost_getSoundBuffer
+	iMUSESoundBuffer *(*bufInfoFunc)(); // ihost_getSoundBuffer
 	int hWnd; // Window handle
 	int codec_outputTempBuffer; // Used by BUN module
 	int codec_saveBuffer; // Used by BUN module
 	int compmgr_fileList; // Used by BUN module
 	int field_68; // Apparently unused
 } iMUSEInitData;
+
+iMUSEInitData initDataPtr;
 
 char *iMUSE_audioBuffer;
 int iMUSE_feedSize; // Always 1024 apparently

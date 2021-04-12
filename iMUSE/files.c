@@ -76,10 +76,10 @@ int files_read(int soundId, uint8 *buf, int size) {
 }
 
 // Validated
-int files_getBufInfo(int bufId) {
+iMUSESoundBuffer *files_getBufInfo(int bufId) {
 	if (bufId && files_initDataPtr->bufInfoFunc != NULL) {
 		return files_initDataPtr->bufInfoFunc(bufId);
 	}
 	printf("ERR: bufInfoFunc failure");
-	return 0;
+	return NULL;
 }

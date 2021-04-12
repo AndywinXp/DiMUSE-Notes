@@ -173,10 +173,10 @@ int dispatch_alloc(iMUSETrack *trackPtr, int priority) {
 	// Check between the large fades 
 	int ptrCtr = 0;
 	for (int i = 0, ptrCtr = 0; 
-		i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM*LARGE_FADES; 
+		i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM * LARGE_FADES; 
 		i++, ptrCtr += LARGE_FADE_DIM) {
 
-		if (dispatch_largeFadeBufs + (LARGE_FADE_DIM*(i+1)) == fadeBuf) { // Found it!
+		if (dispatch_largeFadeBufs + (LARGE_FADE_DIM * i) == fadeBuf) { // Found it!
 			if (dispatch_largeFadeFlags[i] == 0) {
 				printf("ERR: redundant large fade buf de-allocation...\n");
 			}
@@ -188,10 +188,10 @@ int dispatch_alloc(iMUSETrack *trackPtr, int priority) {
 	// Check between the small fades 
 	ptrCtr = 0;
 	for (int j = 0, ptrCtr = 0;
-		j < SMALL_FADES, ptrCtr < SMALL_FADE_DIM*SMALL_FADES;
+		j < SMALL_FADES, ptrCtr < SMALL_FADE_DIM * SMALL_FADES;
 		j++, ptrCtr += SMALL_FADE_DIM) {
 
-		if (dispatch_largeFadeBufs + (SMALL_FADE_DIM*(j + 1)) == fadeBuf) { // Found it!
+		if (dispatch_largeFadeBufs + (SMALL_FADE_DIM * j) == fadeBuf) { // Found it!
 			if (dispatch_smallFadeFlags[j] == 0) {
 				printf("ERR: redundant small fade buf de-allocation...\n");
 			}
@@ -232,10 +232,10 @@ int dispatch_release(iMUSETrack *trackPtr) {
 	// Check between the large fades 
 	int ptrCtr = 0;
 	for (int i = 0, ptrCtr = 0;
-		i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM*LARGE_FADES;
+		i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM * LARGE_FADES;
 		i++, ptrCtr += LARGE_FADE_DIM) {
 
-		if (dispatch_largeFadeBufs + (LARGE_FADE_DIM*(i)) == fadeBuf) { // Found it!
+		if (dispatch_largeFadeBufs + (LARGE_FADE_DIM * i) == fadeBuf) { // Found it!
 			if (dispatch_largeFadeFlags[i] == 0) {
 				printf("ERR: redundant large fade buf de-allocation...\n");
 			}
@@ -250,7 +250,7 @@ int dispatch_release(iMUSETrack *trackPtr) {
 		j < SMALL_FADES, ptrCtr < SMALL_FADE_DIM*SMALL_FADES;
 		j++, ptrCtr += SMALL_FADE_DIM) {
 
-		if (dispatch_smallFadeBufs + (SMALL_FADE_DIM*(j)) == fadeBuf) { // Found it!
+		if (dispatch_smallFadeBufs + (SMALL_FADE_DIM * j) == fadeBuf) { // Found it!
 			if (dispatch_smallFadeFlags[j] == 0) {
 				printf("ERR: redundant small fade buf de-allocation...\n");
 			}

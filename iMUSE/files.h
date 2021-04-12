@@ -13,6 +13,6 @@ int files_getNextSound(int soundId);
 int files_checkRange(int soundId);
 int files_seek(int soundId, int offset, int mode);
 int files_read(int soundId, uint8 *buf, int size);
-int files_getBufInfo(int bufId);
+iMUSESoundBuffer *files_getBufInfo(int bufId);
 
 #endif

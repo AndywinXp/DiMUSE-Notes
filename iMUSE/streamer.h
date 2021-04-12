@@ -10,7 +10,7 @@ typedef struct {
 	int curOffset;
 	int endOffset;
 	int bufId;
-	int buf;
+	uint8 *buf;
 	int bufFreeSize;
 	int loadSize;
 	int criticalSize;
@@ -36,7 +36,7 @@ int streamer_setIndex2(iMUSEStream *streamPtr, unsigned int offset);
 int streamer_getFreeBuffer(iMUSEStream *streamPtr);
 int streamer_setSoundToStreamWithCurrentOffset(iMUSEStream *streamPtr, int soundId, int currentOffset);
 int streamer_queryStream(iMUSEStream *streamPtr, int *bufSize, int *criticalSize, int *freeSpace, int *paused);
-int streamer_feedStream(iMUSEStream *streamPtr, int *srcBuf, unsigned int sizeToFeed, int paused);
+int streamer_feedStream(iMUSEStream *streamPtr, uint8 *srcBuf, unsigned int sizeToFeed, int paused);
 int streamer_fetchData(iMUSEStream *streamPtr);
 
 #endif
