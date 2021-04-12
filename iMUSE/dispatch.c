@@ -311,10 +311,10 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 			// Mark the fade corresponding to our fadeBuf as unused
 			ptrCtr = 0;
 			for (int i = 0, ptrCtr = 0;
-				i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM*LARGE_FADES;
+				i < LARGE_FADES, ptrCtr < LARGE_FADE_DIM * LARGE_FADES;
 				i++, ptrCtr += LARGE_FADE_DIM) {
 
-				if (dispatch_largeFadeBufs + (LARGE_FADE_DIM*(i)) == fadeBuffer) {
+				if (dispatch_largeFadeBufs + (LARGE_FADE_DIM * i) == fadeBuffer) {
 					if (dispatch_largeFadeFlags[i] == 0) {
 						printf("ERR: redundant large fade buf de-allocation...\n");
 					}
@@ -325,7 +325,7 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 
 			if (ptrCtr + dispatch_largeFadeBufs != fadeBuffer) {
 				for (int j = 0, ptrCtr = 0;
-					j < SMALL_FADES, ptrCtr <= SMALL_FADE_DIM*SMALL_FADES;
+					j < SMALL_FADES, ptrCtr <= SMALL_FADE_DIM * SMALL_FADES;
 					j++, ptrCtr += SMALL_FADE_DIM) {
 
 					if (ptrCtr >= SMALL_FADE_DIM * SMALL_FADES) {
@@ -333,7 +333,7 @@ int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int un
 						break;
 					}
 
-					if (dispatch_smallFadeBufs + (SMALL_FADE_DIM*(j)) == fadeBuffer) {
+					if (dispatch_smallFadeBufs + (SMALL_FADE_DIM * j) == fadeBuffer) {
 						if (dispatch_smallFadeFlags[j] == 0) {
 							printf("ERR: redundant small fade buf de-allocation...\n");
 						}
