@@ -171,7 +171,7 @@ void tracks_callback() {
 }
 
 // Validated
-int tracks_startSound(int soundId, int tryPriority, int unused) {
+int tracks_startSound(int soundId, int tryPriority, int group) {
 	int priority = iMUSE_clampNumber(tryPriority, 0, 127);
 	if (tracks_trackCount > 0) {
 		int l = 0;
@@ -198,7 +198,7 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 		foundTrack->mailbox = 0;
 		foundTrack->jumpHook = 0;
 
-		if (dispatch_alloc(foundTrack, foundTrack->priority)) {
+		if (dispatch_alloc(foundTrack, group)) {
 			printf("ERR: dispatch couldn't start sound...\n");
 			foundTrack->soundId = 0;
 			return -1;
@@ -248,7 +248,7 @@ int tracks_startSound(int soundId, int tryPriority, int unused) {
 	stolenTrack->mailbox = 0;
 	stolenTrack->jumpHook = 0;
 
-	if (dispatch_alloc(&stolenTrack, stolenTrack->priority)) {
+	if (dispatch_alloc(&stolenTrack, group)) {
 		printf("ERR: dispatch couldn't start sound...\n");
 		stolenTrack->soundId = 0;
 		return -1;
@@ -412,14 +412,12 @@ int tracks_setParam(int soundId, int opcode, int value) {
 					track->transpose = iMUSE_clampTuning(track->detune + value, -12, 12);
 				}
 				track->pitchShift = track->detune + (track->transpose * 256);
-				// end of DIG
-
 				/*
 				// COMI
 				if (value < 0 || value > 4095)
 					return -5;
 				track->pitchShift = value;
-				// end of COMI*/
+				*/
 				return 0;
 			case 0xA00:
 				track->mailbox = value;
@@ -474,10 +472,8 @@ int tracks_getParam(int soundId, int opcode) {
 			case 0x1800:
 				return (track->dispatchPtr->streamPtr != 0);
 			case 0x1900:
-				return track->dispatchPtr->streamBufID;
-			// COMI maybe?
-			/*
-			case 0x1A00:
+				return track->dispatchPtr->streamBufID;		
+			case 0x1A00: // getCurSoundPositionInMs
 				if (track->dispatchPtr->wordSize == 0)
 					return 0;
 				if (track->dispatchPtr->sampleRate == 0)
@@ -485,7 +481,6 @@ int tracks_getParam(int soundId, int opcode) {
 				if (track->dispatchPtr->channelCount == 0)
 					return 0;
 				return (track->dispatchPtr->currentOffset * 5) / (((track->dispatchPtr->wordSize / 8) * track->dispatchPtr->sampleRate * track->dispatchPtr->channelCount) / 200);
-			*/
 			default:
 				return -5;
 			}

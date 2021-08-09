@@ -68,7 +68,7 @@ iMUSEDispatch *dispatch_getTrackById(int trackId);
 int dispatch_save(int dst, int size);
 int dispatch_restore(const void *src);
 int dispatch_allocStreamZones();
-int dispatch_alloc(iMUSETrack *trackPtr, int priority);
+int dispatch_alloc(iMUSETrack *trackPtr, int groupId);
 int dispatch_release(iMUSETrack *trackPtr);
 int dispatch_switchStream(int oldSoundId, int newSoundId, int fadeLength, int unusedFadeSyncFlag, int offsetFadeSyncFlag);
 void dispatch_processDispatches(iMUSETrack *trackPtr, int feedSize, int sampleRate);

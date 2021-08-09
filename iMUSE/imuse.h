@@ -37,7 +37,7 @@ typedef struct {
 	}
 	whatever that is
 	*/
-	int (*func_some1)();
+	int (*func_fetchMap)();
 	int (*scriptCallback)();
 	int field_C; // Set to 0
 	int hostIntHandler;

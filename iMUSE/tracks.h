@@ -41,7 +41,7 @@ int tracks_save(int *buffer, int leftSize);
 int tracks_restore(int *buffer);
 void tracks_setGroupVol();
 void tracks_callback();
-int tracks_startSound(int soundId, int tryPriority, int unused);
+int tracks_startSound(int soundId, int tryPriority, int group);
 int tracks_stopSound(int soundId);
 int tracks_stopAllSounds();
 int tracks_getNextSound(int soundId);

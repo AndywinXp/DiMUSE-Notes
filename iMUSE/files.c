@@ -26,11 +26,11 @@ uint8 *files_getSoundAddrData(int soundId) {
 	return 0;
 }
 
-// TODO: what is this func_some1?
-int files_some1(int soundId) {
+// Validated, appears to always return 0 since func_fetchMap is always null
+int files_fetchMap(int soundId) {
 	if ((soundId != 0 && soundId < 0xFFFFFFF0) && files_initDataPtr != NULL) {
-		if (files_initDataPtr->func_some1) {
-			return files_initDataPtr->func_some1(soundId);
+		if (files_initDataPtr->func_fetchMap) {
+			return files_initDataPtr->func_fetchMap(soundId);
 		}
 	}
 	return 0;

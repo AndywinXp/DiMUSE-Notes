@@ -121,7 +121,7 @@ int dispatch_allocStreamZones() {
 }
 
 // Almost validated, check if the list removal code works
-int dispatch_alloc(iMUSETrack *trackPtr, int priority) {
+int dispatch_alloc(iMUSETrack *trackPtr, int groupId) {
 	iMUSEDispatch *trackDispatch;
 	iMUSEDispatch *dispatchToDeallocate;
 	iMUSEStreamZone **streamZoneList;
@@ -133,13 +133,13 @@ int dispatch_alloc(iMUSETrack *trackPtr, int priority) {
 	trackDispatch->audioRemaining = 0;
 	trackDispatch->map[0] = NULL;
 	trackDispatch->fadeBuf = 0;
-	if (priority) {
-		trackDispatch->streamPtr = streamer_alloc(trackPtr->soundId, priority, 0x2000u);
+	if (groupId) {
+		trackDispatch->streamPtr = streamer_alloc(trackPtr->soundId, groupId, 0x2000u);
 		if (!trackDispatch->streamPtr) {
 			printf("ERR: unable to alloc stream...");
 			return -1;
 		}
-		trackDispatch->streamBufID = priority;
+		trackDispatch->streamBufID = groupId;
 		trackDispatch->streamZoneList = 0;
 		trackDispatch->streamErrFlag = 0;
 	} else {
@@ -877,7 +877,7 @@ int dispatch_predictFirstStream() {
 	return waveapi_decreaseSlice();
 }
 
-// Almost validated, fade allocation stuff to rename
+// Validated
 int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 	int *dstMap;
 	int *rawMap;
@@ -905,6 +905,7 @@ int dispatch_getNextMapEvent(iMUSEDispatch *dispatchPtr) {
 			return -1;
 		}
 
+		// This appears to always be NULL since func_fetchMap is never initialized
 		rawMap = files_fetchMap(dispatchPtr->trackPtr->soundId);
 		if (rawMap) {
 			if (dispatch_convertMap(rawMap, (uint8 *)dstMap)) {
